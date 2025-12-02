@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.cpp.lib import CPP_LIB
+from hisss.cpp.lib import CPP_LIB
 
 
 def calculate_nash_equilibrium(
