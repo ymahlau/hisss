@@ -3,9 +3,9 @@
 //
 
 #include <iostream>
-#include "header/battlesnake.h"
-#include "header/battlesnake_helper.h"
-#include "header/nash.h"
+#include "../header/battlesnake.h"
+#include "../header/battlesnake_helper.h"
+#include "../header/nash.h"
 
 //g++ -c -fPIC link.cpp -o link.o
 //g++ -shared -Wl,-soname,-liblink.so -o liblink.so link.o

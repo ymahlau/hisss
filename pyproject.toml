@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "hatchling>=1.28.0",
     "numpy>=2.3.5",
     "pytest>=9.0.1",
 ]
@@ -18,3 +19,6 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hisss"]
+artifacts = ["src/hisss/*.so"]
+
+[tool.hatch.build.hooks.custom]
