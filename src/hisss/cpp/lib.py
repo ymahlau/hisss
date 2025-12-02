@@ -139,24 +139,7 @@ class CPPLibrary:
             ct.POINTER(Struct),
             ct.POINTER(ct.c_bool),
         ]
-        self.lib.logit_cpp.argtypes = [
-            ct.c_int,
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_double),
-            ct.c_int,
-            ct.c_double,
-            ct.POINTER(ct.c_double),
-            ct.c_bool,
-            ct.c_int,
-            ct.c_double,
-            ct.c_double,
-            ct.POINTER(ct.c_double),
-            ct.POINTER(ct.c_double),
-            ct.POINTER(ct.c_double),
-        ]
-        self.lib.logit_cpp.restype = ct.c_double
+        
         self.lib.compute_nash_cpp.argtypes = [
             ct.c_int,
             ct.POINTER(ct.c_int),
@@ -170,80 +153,11 @@ class CPPLibrary:
         self.lib.set_seed.argtypes = [
             ct.c_int,
         ]
-        self.lib.mle_temperature_cpp.argtypes = [
-            ct.c_double,
-            ct.c_double,
-            ct.c_int,
-            ct.c_int,
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_double),
-            ct.c_bool,
-        ]
-        self.lib.mle_temperature_cpp.restype = ct.c_double
-        self.lib.temperature_likelihood_cpp.argtypes = [
-            ct.c_double,
-            ct.c_int,
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_double),
-        ]
-        self.lib.temperature_likelihood_cpp.restype = ct.c_double
-        self.lib.rm_qr_cpp.argtypes = [
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_double),
-            ct.c_int,
-            ct.c_int,
-            ct.c_double,
-            ct.c_double,
-            ct.POINTER(ct.c_double),
-            ct.POINTER(ct.c_double),
-        ]
-        self.lib.qse_cpp.argtypes = [
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_double),
-            ct.c_int,
-            ct.c_int,
-            ct.c_int,
-            ct.c_double,
-            ct.POINTER(ct.c_double),
-            ct.POINTER(ct.c_double),
-        ]
+        
         self.lib.char_game_matrix_cpp.argtypes = [
             ct.POINTER(Struct),
             ct.POINTER(ct.c_int8),
         ]
-        self.lib.init_overcooked_cpp.argtypes = [
-            ct.c_int,
-            ct.c_int,
-            ct.POINTER(ct.c_int),
-            ct.POINTER(ct.c_int),
-            ct.c_int,
-            ct.c_int,
-            ct.c_double,
-            ct.c_double,
-            ct.c_double,
-            ct.c_double,
-            ct.c_double,
-            ct.c_bool,
-        ]
-        self.lib.init_overcooked_cpp.restype = ct.POINTER(Struct)
-        self.lib.clone_overcooked_cpp.argtypes = [ct.POINTER(Struct)]
-        self.lib.clone_overcooked_cpp.restype = ct.POINTER(Struct)
-        self.lib.close_overcooked_cpp.argtypes = [ct.POINTER(Struct)]
-        self.lib.step_overcooked_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(ct.c_int)]
-        self.lib.step_overcooked_cpp.restype = ct.c_double
-        self.lib.char_overcooked_matrix_cpp.argtypes = [ct.POINTER(Struct), ct.c_char_p]
-        self.lib.construct_overcooked_encoding_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(ct.c_float), ct.c_int, ct.c_bool, ct.c_float]
-        self.lib.equals_overcooked_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(Struct)]
-        self.lib.equals_overcooked_cpp.restype = ct.c_bool
-        self.lib.get_player_infos_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(ct.c_int)]
-        self.lib.get_state_oc_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(ct.c_int)]
-        self.lib.update_tile_states_overcooked_cpp.argtypes = [ct.POINTER(Struct), ct.POINTER(ct.c_int)]
 
     def get_area_control(
             self,
@@ -282,71 +196,6 @@ class CPPLibrary:
             food_in_hazard_weight
         )
         return area_control_arr, food_dist_arr, tail_dist_arr, reached_tail_arr, reached_food_arr
-
-    def compute_logit_equilibrium(
-            self,
-            available_actions: list[list[int]],  # maps player(index of player_at_turn) to available actions
-            joint_action_list: list[tuple[int, ...]],
-            joint_action_value_arr: np.ndarray,  # shape (num_joint_actions, num_player_at_turn)
-            num_iterations: int,
-            epsilon: float,
-            temperatures: list[float],
-            initial_policies: Optional[list[np.ndarray]] = None,
-            hp_0: float = 0,
-            hp_1: float = 0,
-            sbr_mode: int = 0,
-    ) -> tuple[list[float], list[np.ndarray], float]:
-        # number of players and actions
-        num_player = len(available_actions)
-        num_available_actions = np.asarray([len(available_actions[p]) for p in range(num_player)], dtype=ct.c_int)
-        num_available_actions_p = num_available_actions.ctypes.data_as(ct.POINTER(ct.c_int))
-        # available actions
-        flat_action_list = [a for sublist in available_actions for a in sublist]
-        available_actions_arr = np.asarray(flat_action_list, dtype=ct.c_int)
-        available_actions_p = available_actions_arr.ctypes.data_as(ct.POINTER(ct.c_int))
-        joint_actions_arr = np.asarray(joint_action_list, dtype=ct.c_int).flatten()
-        joint_actions_p = joint_actions_arr.ctypes.data_as(ct.POINTER(ct.c_int))
-        joint_action_value_arr_flat = joint_action_value_arr.astype(ct.c_double).flatten()
-        joint_action_value_p = joint_action_value_arr_flat.ctypes.data_as(ct.POINTER(ct.c_double))
-        # initialization
-        initial_uniform = initial_policies is None
-        initial_policies_p = ct.cast(0, ct.POINTER(ct.c_double))
-        if not initial_uniform:
-            flat_initial_policies = np.concatenate(initial_policies, axis=0).astype(ct.c_double)
-            initial_policies_p = flat_initial_policies.ctypes.data_as(ct.POINTER(ct.c_double))
-        # weighting
-        temperatures_arr = np.asarray(temperatures, dtype=ct.c_double)
-        temperatures_p = temperatures_arr.ctypes.data_as(ct.POINTER(ct.c_double))
-        # result arrays
-        result_values = np.zeros(shape=(num_player,), dtype=ct.c_double)
-        result_values_p = result_values.ctypes.data_as(ct.POINTER(ct.c_double))
-        result_policies = np.zeros_like(available_actions_arr, dtype=ct.c_double)
-        result_policies_p = result_policies.ctypes.data_as(ct.POINTER(ct.c_double))
-        pol_error = self.lib.logit_cpp(
-            num_player,
-            num_available_actions_p,
-            available_actions_p,
-            joint_actions_p,
-            joint_action_value_p,
-            num_iterations,
-            epsilon,
-            temperatures_p,
-            initial_uniform,
-            sbr_mode,
-            hp_0,
-            hp_1,
-            initial_policies_p,
-            result_values_p,
-            result_policies_p,
-        )
-        value_list = list(result_values)
-        result_policy_list = []
-        start_idx = 0
-        for p in range(num_player):
-            end_idx = start_idx + num_available_actions[p]
-            result_policy_list.append(result_policies[start_idx:end_idx])
-            start_idx = end_idx
-        return value_list, result_policy_list, pol_error
 
     def compute_nash(
             self,
