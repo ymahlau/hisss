@@ -8,7 +8,7 @@ import numpy as np
 
 from hisss.cpp.lib import CPP_LIB
 from hisss.game.state import BattleSnakeState
-from hisss.game.config import BattleSnakeConfig, post_init_battlesnake_cfg, validate_battlesnake_cfg
+from hisss.game.config import BattleSnakeConfig, encoding_layer_indices, post_init_battlesnake_cfg, validate_battlesnake_cfg
 from hisss.game.encoding import num_layers_general, layers_per_player, layers_per_enemy
 from hisss.game.rewards import get_battlesnake_reward_func_from_cfg
 from hisss.game.utils import int_to_perm
@@ -47,6 +47,7 @@ class BattleSnakeGame:
         self.players_alive_save: Optional[list[int]] = None
         self.players_alive_last: Optional[list[int]] = None  # property of last step
         self.reward_func = get_battlesnake_reward_func_from_cfg(self.cfg.reward_cfg)
+        self.layer_explanation = encoding_layer_indices(self.cfg)
         
     @property
     def num_actions(self):
@@ -589,13 +590,13 @@ class BattleSnakeGame:
     def get_obs(
             self,
             symmetry: Optional[int] = 0,
-            temperatures: Optional[list[float]] = None,
-            single_temperature: Optional[bool] = None,
     ) -> tuple[
         np.ndarray,
         dict[int, int],
         dict[int, int],
     ]:
+        temperatures = None
+        single_temperature = None
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         if self.is_terminal():
@@ -654,6 +655,40 @@ class BattleSnakeGame:
         if self.cfg.ec.flatten:
             obs_res = obs_res.reshape(self.num_players_at_turn(), -1)
         result = obs_res.copy()  # necessary because of negative stride
+        # view radius
+        if self.cfg.view_radius is not None:
+            masks = []
+            for p_self in self.players_at_turn():
+                scaled_distance = result[p_self, :, :, self.layer_explanation['distance_map']]
+                distance_map = scaled_distance * (self.cfg.w + self.cfg.h - 2)
+                cur_mask = (distance_map <= self.cfg.view_radius).astype(float)
+                masks.append(cur_mask)
+                if 'current_food' in self.layer_explanation:
+                    cur_layer = result[p_self, :, :, self.layer_explanation['current_food']]
+                    result[p_self, :, :, self.layer_explanation['current_food']] = cur_layer * cur_mask
+                for p in range(1, self.num_players):  # do not restrict view on own player
+                    if f'{p}_snake_health' in self.layer_explanation:
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_health']] = 0
+                    if f'{p}_snake_length' in self.layer_explanation:
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_length']] = 0
+                    if f'{p}_snake_tail_distance' in self.layer_explanation:
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail_distance']] = 0
+                    if f'{p}_snake_body' in self.layer_explanation:
+                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_body']]
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_body']] = cur_layer * cur_mask
+                    if f'{p}_snake_body_as_one_hot' in self.layer_explanation:
+                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_body_as_one_hot']]
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_body_as_one_hot']] = cur_layer * cur_mask
+                    if f'{p}_snake_head' in self.layer_explanation:
+                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_head']]
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_head']] = cur_layer * cur_mask
+                    if f'{p}_snake_tail' in self.layer_explanation:
+                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail']]
+                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail']] = cur_layer * cur_mask
+            # make mask layer
+            if self.cfg.ec.include_view_mask:
+                mask_arr = np.asarray(masks)
+                result = np.concatenate((result, mask_arr[:, :, :, None]), axis=-1)
         return result, perm, inv_perm
 
     def __del__(self):

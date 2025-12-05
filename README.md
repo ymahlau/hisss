@@ -1,4 +1,4 @@
-# High-speed Interface for Snake Simulation (HISSS)
+# High-Speed Snake Simulator (HISSS)
 
 A very fast simulation environment for the game of [Battlesnake](https://play.battlesnake.com). The game logic is implemented in C++ and provides python wrappers for convenience. The main features include:
 - Fast C++ Implemtation with convenient python wrappers
@@ -13,7 +13,7 @@ You can install this package via pip:
 pip install hisss
 ```
 
-If you want to do development, change something or contribute new features fork this repository and the install
+If you want to do development, change something or contribute new features fork this repository, clone and install via
 ```bash
 pip install -e .
 ```
@@ -73,6 +73,8 @@ obs, perm, inv_perm = env.get_obs(symmetry=1)  # specify the symmetry you want f
 ```
 You can get the transformed observation by specifying the symmetry as shown in the example above. You will always get the action permutation and inverse permutation as an additional output of the step function, since with a symmetry applied the policy needs to be carefully permutated as well to keep everything correct.
 
-
+# Limitations
+There are some limitation to the current implementation which may or may not be fixed in the future:
+- In the restricted mode, food is only visible in the observation within the view radius. Usually it should be visible outside the view radius in the spawn turn, but this does not happen currently, because our current implementation does not save the food spawn turn.
 
 

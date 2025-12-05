@@ -25,6 +25,7 @@ class BattleSnakeEncodingConfig:
     temperature_input: bool = False
     single_temperature_input: bool = True
     fixed_food_spawn_chance: float = -1  # -1 is the code for using default game value
+    include_view_mask: bool = False
 
 def num_layers_general(cfg: BattleSnakeEncodingConfig) -> int:
     result = cfg.include_current_food + cfg.include_next_food \
@@ -145,7 +146,6 @@ class SimpleConstrictorEncodingConfig(BattleSnakeEncodingConfig):
     include_num_food_on_board: bool = field(default=False)
     fixed_food_spawn_chance: float = field(default=-1)
 
-
 @dataclass
 class BestConstrictorEncodingConfig(BattleSnakeEncodingConfig):
     include_current_food: bool = field(default=False)
@@ -169,3 +169,28 @@ class BestConstrictorEncodingConfig(BattleSnakeEncodingConfig):
     include_num_food_on_board: bool = field(default=False)
     fixed_food_spawn_chance: float = field(default=-1)
 
+
+# Restricted Mode #####################################################
+@dataclass
+class BestRestrictedEncodingConfig(BattleSnakeEncodingConfig):
+    include_current_food: bool = field(default=True)
+    include_next_food: bool = field(default=False)
+    include_board: bool = field(default=True)
+    include_number_of_turns: bool = field(default=True)
+    compress_enemies: bool = field(default=True)
+    include_snake_body_as_one_hot: bool = field(default=True)
+    include_snake_body: bool = field(default=True)
+    include_snake_head: bool = field(default=True)
+    include_snake_tail: bool = field(default=True)
+    include_snake_health: bool = field(default=True)
+    include_snake_length: bool = field(default=True)
+    include_distance_map: bool = field(default=True)
+    flatten: bool = field(default=False)
+    centered: bool = field(default=True)
+    include_area_control: bool = field(default=False)
+    include_food_distance: bool = field(default=False)
+    include_hazards: bool = field(default=False)
+    include_tail_distance: bool = field(default=False)
+    include_num_food_on_board: bool = field(default=False)
+    fixed_food_spawn_chance: float = field(default=-1)
+    include_view_mask: bool = field(default=True)

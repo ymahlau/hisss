@@ -1,16 +1,20 @@
 
-from hisss.game.battlesnake import UP, BattleSnakeGame
-from hisss.game.config import BattleSnakeConfig, duel_config
+from hisss.game.battlesnake import LEFT, UP, BattleSnakeGame
+from hisss.game.config import BattleSnakeConfig, duel_config, encoding_layer_indices, restricted_duel_config
 
 
 def main():
     print("Hello from hisss!")
-    cfg = duel_config()
+    cfg = restricted_duel_config()
     env = BattleSnakeGame(cfg)
     env.render()
     
-    env.step(actions=(UP, UP))
+    rewards, done, _ = env.step(actions=(UP, UP))
+    rewards, done, _ = env.step(actions=(LEFT, LEFT))
     env.render()
+    # env.reset()
+    obs, _, _ = env.get_obs()
+    explanation = encoding_layer_indices(cfg)
     
     x = env.get_state()
     a = 1
