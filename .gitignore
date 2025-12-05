@@ -2,3 +2,4 @@ uv.lock
 *.pyc
 *.o
 *.so
+main*.py

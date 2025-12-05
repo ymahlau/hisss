@@ -1,9 +1,11 @@
+![cover](/img/hisss_cover.png)
 # High-Speed Snake Simulator (HISSS)
 
 A very fast simulation environment for the game of [Battlesnake](https://play.battlesnake.com). The game logic is implemented in C++ and provides python wrappers for convenience. The main features include:
 - Fast C++ Implemtation with convenient python wrappers
 - Support of all game modes including Royale, Wrapped, Constrictor, Restricted
 - Generation of observation arrays for neural network training
+
 
 ## Installation
 IMPORTANT: You need to have `g++` installed to use this library. The pip installation will compile the C++ source files for your system
@@ -77,4 +79,16 @@ You can get the transformed observation by specifying the symmetry as shown in t
 There are some limitation to the current implementation which may or may not be fixed in the future:
 - In the restricted mode, food is only visible in the observation within the view radius. Usually it should be visible outside the view radius in the spawn turn, but this does not happen currently, because our current implementation does not save the food spawn turn.
 
+# References
 
+This snake simulator was mainly used in the development of [Albatross](https://github.com/ymahlau/albatross). It has already been published there, but this standalone simulator is easier to install and easier to manage. It is targeted for anyone who wants to work with Battlesnake, but not necessarily use the Albatross method. You can cite this repository the same as the albatross repository with:
+
+```
+@inproceedings{mahlau_albatross_24,
+  author = {Yannik Mahlau and Frederik Schubert and Bodo Rosenhahn},
+  title = {Mastering Zero-Shot Interactions in Cooperative and Competitive Simultaneous Games},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  year = {2024},
+  month = jul
+}
+```
