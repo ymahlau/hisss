@@ -6,9 +6,7 @@ A very fast simulation environment for the game of [Battlesnake](https://play.ba
 - Support of all game modes including Royale, Wrapped, Constrictor, Restricted
 - Generation of observation arrays for neural network training
 
-
-https://github.com/user-attachments/assets/456e993d-3c15-47c8-a78d-f1e4141996c1
-
+https://github.com/user-attachments/assets/68538aa0-9ddb-45e2-b0c7-8ac224ff4dd8
 
 ## Installation
 IMPORTANT: You need to have `g++` installed to use this library. The pip installation will compile the C++ source files for your system
