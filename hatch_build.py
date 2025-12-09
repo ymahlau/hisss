@@ -26,7 +26,8 @@ class CustomBuildHook(BuildHookInterface):
 
         # --- STEP 1: COMPILE ALGLIB ---
         # Flags: -w (suppress warnings), -O3, -fPIC
-        print(f"   [1/3] Compiling Alglib files...")
+        print(f"   [1/3] Compiling Alglib files")
+        print(f"   This might take a while....    ")
         
         alglib_files = [
             "ap", "alglibinternal", "alglibmisc", 
@@ -81,6 +82,7 @@ class CustomBuildHook(BuildHookInterface):
     def _run_command(self, cmd):
         try:
             subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
             print(f"!!! Error executing: {' '.join(cmd)}")
+            print(e)
             sys.exit(1)
