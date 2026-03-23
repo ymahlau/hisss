@@ -1,0 +1,90 @@
+name: Build and Publish
+
+on:
+  release:
+    types: [published]
+    # tags:
+    #   - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-latest, windows-latest]
+        # ubuntu-latest  → Linux x86_64 (+ aarch64 via QEMU)
+        # macos-13       → macOS x86_64 (Intel runner)
+        # macos-latest   → macOS arm64  (Apple Silicon runner)
+        # windows-latest → Windows x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (Linux aarch64)
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_BUILD: "cp312-* cp313-*"
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
+          CIBW_ARCHS_MACOS: "native"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_BEFORE_BUILD: "pip install cmake ninja"
+          CIBW_TEST_COMMAND: "pytest {project}/test/game/ -x -q"
+          CIBW_TEST_REQUIRES: "pytest"
+          CIBW_TEST_SKIP: "*-manylinux_aarch64 *-musllinux_aarch64"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx run build --sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  pypi-publish:
+    name: Build and publish Python 🐍 distributions to PyPI
+    runs-on: ubuntu-latest
+    # This permission is REQUIRED for Trusted Publishing
+    permissions:
+      id-token: write  
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # We don't need a password/token input because we use 
+          # Trusted Publishing (id-token permission above).
+          print-hash: true
