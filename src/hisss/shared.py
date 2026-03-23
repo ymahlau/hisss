@@ -4,13 +4,12 @@ import random
 import numpy as np
 
 from hisss.game.battlesnake import BattleSnakeGame
-from hisss.game.config import BattleSnakeConfig
 
 
 def action_kills_player(
-        game: BattleSnakeGame,
-        player: int,
-        ja: tuple[int, ...],
+    game: BattleSnakeGame,
+    player: int,
+    ja: tuple[int, ...],
 ) -> bool:
     cpy = game.get_copy()
     cpy.step(ja)
@@ -18,8 +17,8 @@ def action_kills_player(
 
 
 def step_with_draw_prevention(
-        game: BattleSnakeGame,
-        joint_actions: tuple[int, ...],
+    game: BattleSnakeGame,
+    joint_actions: tuple[int, ...],
 ) -> np.ndarray:
     # computes a step, which prevents a draw between two players (if possible). Returns reward of the step
     # Also does not change the win chances for either player in repeated games (equal yield probability)

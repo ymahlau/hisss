@@ -1,7 +1,9 @@
-
-
 from hisss.game.config import BattleSnakeConfig
-from hisss.game.encoding import SimpleBattleSnakeEncodingConfig, SimpleConstrictorEncodingConfig, VanillaBattleSnakeEncodingConfig
+from hisss.game.encoding import (
+    SimpleBattleSnakeEncodingConfig,
+    SimpleConstrictorEncodingConfig,
+    VanillaBattleSnakeEncodingConfig,
+)
 from hisss.game.rewards import KillBattleSnakeRewardConfig
 
 
@@ -54,6 +56,7 @@ def survive_on_5x5_constrictor() -> BattleSnakeConfig:
         constrictor=True,
     )
     return gc
+
 
 def survive_on_5x5_constrictor_4player() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig()
@@ -110,6 +113,7 @@ def value_test_5x5_4p(centered: bool) -> BattleSnakeConfig:
     gc.reward_cfg.living_reward = 0.01
     return gc
 
+
 def perform_choke_5x5_4_player(centered: bool) -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig()
     ec.centered = centered
@@ -125,6 +129,7 @@ def perform_choke_5x5_4_player(centered: bool) -> BattleSnakeConfig:
     )
     return gc
 
+
 def unstable_state_duel() -> BattleSnakeConfig:
     gc = BattleSnakeConfig(
         w=5,
@@ -133,13 +138,17 @@ def unstable_state_duel() -> BattleSnakeConfig:
         init_food_pos=[],
         min_food=0,
         food_spawn_chance=15,
-        init_snake_pos={0: [[1, 0], [0, 0], [0, 1]], 1: [[2, 1], [3, 1], [3, 2], [2, 2]]},
+        init_snake_pos={
+            0: [[1, 0], [0, 0], [0, 1]],
+            1: [[2, 1], [3, 1], [3, 2], [2, 2]],
+        },
         init_snake_health=[100, 100],
         init_snake_len=[3, 4],
         init_snakes_alive=[True, True],
         all_actions_legal=False,
     )
     return gc
+
 
 def start_state_duel() -> BattleSnakeConfig:
     gc = BattleSnakeConfig(
@@ -149,13 +158,17 @@ def start_state_duel() -> BattleSnakeConfig:
         init_food_pos=[],
         min_food=0,
         food_spawn_chance=15,
-        init_snake_pos={0: [[1, 1], [0, 1], [0, 0], [1, 0]], 1: [[3, 3], [3, 4], [4, 4], [4, 3]]},
+        init_snake_pos={
+            0: [[1, 1], [0, 1], [0, 0], [1, 0]],
+            1: [[3, 3], [3, 4], [4, 4], [4, 3]],
+        },
         init_snake_health=[100, 100],
         init_snake_len=[4, 4],
         init_snakes_alive=[True, True],
         all_actions_legal=False,
     )
     return gc
+
 
 def cooperation_choke_5x5() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig(centered=True)
@@ -164,12 +177,17 @@ def cooperation_choke_5x5() -> BattleSnakeConfig:
         w=5,
         h=5,
         num_players=4,
-        init_snake_pos={0: [[1, 2], [1, 1], [1, 0]], 1: [[3, 2], [3, 1], [3, 0]],
-                        2: [[2, 4]], 3: [[2, 0]]},
+        init_snake_pos={
+            0: [[1, 2], [1, 1], [1, 0]],
+            1: [[3, 2], [3, 1], [3, 0]],
+            2: [[2, 4]],
+            3: [[2, 0]],
+        },
         all_actions_legal=False,
         constrictor=True,
     )
     return gc
+
 
 def randomization() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig(centered=True)
@@ -181,7 +199,10 @@ def randomization() -> BattleSnakeConfig:
         init_snake_len=[6, 4],
         init_snake_health=[4, 4],
         init_food_pos=[],
-        init_snake_pos={0: [[2, 1], [2, 0], [1, 0], [0, 0], [0, 1], [0, 2]], 1: [[4, 3], [3, 3], [3, 2], [2, 2]]},
+        init_snake_pos={
+            0: [[2, 1], [2, 0], [1, 0], [0, 0], [0, 1], [0, 2]],
+            1: [[4, 3], [3, 3], [3, 2], [2, 2]],
+        },
         all_actions_legal=True,
         constrictor=False,
         min_food=0,

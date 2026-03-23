@@ -1,15 +1,18 @@
 import math
 import unittest
 
-from hisss.game.battlesnake import BattleSnakeGame, LEFT, DOWN, UP
+from hisss.game.battlesnake import BattleSnakeGame, LEFT, UP
 
 import numpy as np
 
 from hisss.game.config import BattleSnakeConfig
-from hisss.game.encoding import BestBattleSnakeEncodingConfig, SimpleBattleSnakeEncodingConfig, layers_per_player, num_layers_general
+from hisss.game.encoding import (
+    BestBattleSnakeEncodingConfig,
+    SimpleBattleSnakeEncodingConfig,
+    layers_per_player,
+    num_layers_general,
+)
 from test.bootcamp.test_envs_11x11 import survive_on_11x11_4_player
-from test.bootcamp.test_envs_3x3 import perform_choke_2_player
-from test.bootcamp.test_envs_5x5 import perform_choke_5x5_4_player
 
 
 class TestEncodingCPP(unittest.TestCase):
@@ -17,8 +20,13 @@ class TestEncodingCPP(unittest.TestCase):
         init_food_pos = [[4, 3], [3, 2], [1, 2], [1, 1], [4, 4], [2, 4]]
         init_snake_pos = {0: [[0, 0]], 1: [[1, 0]]}
         ec = SimpleBattleSnakeEncodingConfig()
-        gc = BattleSnakeConfig(init_food_pos=init_food_pos, init_snake_pos=init_snake_pos, ec=ec, init_snake_len=[3, 3],
-                               num_players=2)
+        gc = BattleSnakeConfig(
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            ec=ec,
+            init_snake_len=[3, 3],
+            num_players=2,
+        )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         enc, _, _ = env.get_obs()
@@ -32,14 +40,21 @@ class TestEncodingCPP(unittest.TestCase):
         init_food_pos = [[4, 4]]
         init_snake_pos = {0: [[2, 0], [1, 0], [0, 0]], 1: [[0, 1], [0, 2]]}
         ec = SimpleBattleSnakeEncodingConfig()
-        gc = BattleSnakeConfig(init_food_pos=init_food_pos, init_snake_pos=init_snake_pos, ec=ec, num_players=2,
-                               init_snake_len=[3, 3])
+        gc = BattleSnakeConfig(
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            ec=ec,
+            num_players=2,
+            init_snake_len=[3, 3],
+        )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         enc, _, _ = env.get_obs(symmetry=0)
         for player in range(2):
             for s in range(2):
-                snake_layer = enc[player, :, :, num_layers_general(ec) + s * layers_per_player(ec)]
+                snake_layer = enc[
+                    player, :, :, num_layers_general(ec) + s * layers_per_player(ec)
+                ]
                 if player == 0:
                     pos_list = init_snake_pos[s]
                 else:
@@ -307,7 +322,10 @@ class TestEncodingCPP(unittest.TestCase):
     def test_centered_all(self):
         conf = BestBattleSnakeEncodingConfig()
         conf.centered = True
-        init_snake_pos = {0: [[0, 0], [1, 0], [2, 0], [3, 0]], 1: [[0, 3], [0, 4], [1, 4], [2, 4]]}
+        init_snake_pos = {
+            0: [[0, 0], [1, 0], [2, 0], [3, 0]],
+            1: [[0, 3], [0, 4], [1, 4], [2, 4]],
+        }
         init_snake_len = [4, 4]
         init_food_pos = [[0, 1]]
         gc = BattleSnakeConfig(
@@ -369,9 +387,17 @@ class TestEncodingCPP(unittest.TestCase):
         init_snake_pos = {0: [[0, 1], [0, 0], [1, 0]], 1: [[4, 2], [4, 3], [4, 4]]}
         init_food_pos = []
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos, init_snake_pos=init_snake_pos,
-                               min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len,
-                               ec=BestBattleSnakeEncodingConfig())
+        gc = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+            ec=BestBattleSnakeEncodingConfig(),
+        )
         gc.ec.include_tail_distance = True
         game = BattleSnakeGame(gc)
         enc = game.get_obs(0)[0]
@@ -383,9 +409,17 @@ class TestEncodingCPP(unittest.TestCase):
         init_snake_len = [3, 3]
         ec = SimpleBattleSnakeEncodingConfig()
         ec.include_num_food_on_board = True
-        gc = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos, init_snake_pos=init_snake_pos,
-                               min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len,
-                               ec=ec)
+        gc = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+            ec=ec,
+        )
         game = BattleSnakeGame(gc)
         food_layer_idx = 2
         game.render()
@@ -394,7 +428,9 @@ class TestEncodingCPP(unittest.TestCase):
         for player in range(2):
             for x in range(obs.shape[1]):
                 for y in range(obs.shape[2]):
-                    self.assertAlmostEqual(.3, obs[player, x, y, food_layer_idx], places=4)
+                    self.assertAlmostEqual(
+                        0.3, obs[player, x, y, food_layer_idx], places=4
+                    )
 
         game.step((UP, LEFT))
         game.render()
@@ -402,7 +438,9 @@ class TestEncodingCPP(unittest.TestCase):
         for player in range(2):
             for x in range(obs.shape[1]):
                 for y in range(obs.shape[2]):
-                    self.assertAlmostEqual(.2, obs[player, x, y, food_layer_idx], places=4)
+                    self.assertAlmostEqual(
+                        0.2, obs[player, x, y, food_layer_idx], places=4
+                    )
 
         game.step((UP, LEFT))
         game.render()
@@ -410,19 +448,28 @@ class TestEncodingCPP(unittest.TestCase):
         for player in range(2):
             for x in range(obs.shape[1]):
                 for y in range(obs.shape[2]):
-                    self.assertAlmostEqual(.1, obs[player, x, y, food_layer_idx], places=4)
+                    self.assertAlmostEqual(
+                        0.1, obs[player, x, y, food_layer_idx], places=4
+                    )
 
     def test_fixed_food_spawn_rate(self):
         init_snake_pos = {0: [[0, 1], [0, 0], [1, 0]], 1: [[4, 2], [4, 3], [4, 4]]}
         init_food_pos = []
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos, init_snake_pos=init_snake_pos,
-                               min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len,
-                               ec=BestBattleSnakeEncodingConfig(include_next_food=True))
+        gc = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+            ec=BestBattleSnakeEncodingConfig(include_next_food=True),
+        )
         gc.ec.fixed_food_spawn_chance = 100
         gc.ec.include_num_food_on_board = True
 
-        
         food_layer_idx = 1
         game = BattleSnakeGame(gc)
         game.render()
@@ -431,5 +478,8 @@ class TestEncodingCPP(unittest.TestCase):
         for player in range(2):
             for x in range(obs.shape[1]):
                 for y in range(obs.shape[2]):
-                    check = obs[player, x, y, food_layer_idx] == 0 or obs[player, x, y, food_layer_idx] > .065
+                    check = (
+                        obs[player, x, y, food_layer_idx] == 0
+                        or obs[player, x, y, food_layer_idx] > 0.065
+                    )
                     self.assertTrue(check)

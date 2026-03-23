@@ -10,9 +10,18 @@ class TestWrapped(unittest.TestCase):
     def test_simple_duel(self):
         init_snake_pos = {0: [[0, 0]], 1: [[2, 2]]}
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=False,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[])
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=False,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[],
+        )
         gc.ec.include_board = False
         game = BattleSnakeGame(gc)
         game.render()
@@ -27,9 +36,18 @@ class TestWrapped(unittest.TestCase):
     def test_kill_body(self):
         init_snake_pos = {0: [[0, 0]], 1: [[2, 0]]}
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[], )
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[],
+        )
         gc.ec.include_board = False
         game = BattleSnakeGame(gc)
         game.render()
@@ -43,9 +61,18 @@ class TestWrapped(unittest.TestCase):
     def test_kill_head_swap(self):
         init_snake_pos = {0: [[0, 1]], 1: [[2, 1]]}
         init_snake_len = [5, 5]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[], )
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[],
+        )
         gc.ec.include_board = False
         game = BattleSnakeGame(gc)
         game.render()
@@ -59,15 +86,29 @@ class TestWrapped(unittest.TestCase):
     def test_area_control(self):
         init_snake_pos = {0: [[0, 0]], 1: [[1, 1]]}
         init_snake_len = [5, 5]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[], )
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[],
+        )
         gc.ec.include_board = False
         game = BattleSnakeGame(gc)
         game.render()
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, _, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(ac)
         self.assertEqual(2, ac[0])
         self.assertEqual(2, ac[1])
@@ -75,15 +116,29 @@ class TestWrapped(unittest.TestCase):
     def test_area_control_2(self):
         init_snake_pos = {0: [[0, 0]], 1: [[0, 1]]}
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[], )
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[],
+        )
         gc.ec.include_board = False
         game = BattleSnakeGame(gc)
         game.render()
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, _fd, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(ac)
         self.assertEqual(2, ac[0])
         self.assertEqual(2, ac[1])
@@ -91,10 +146,19 @@ class TestWrapped(unittest.TestCase):
     def test_wrapped_encoding(self):
         init_snake_pos = {0: [[0, 0]], 1: [[1, 0]]}
         init_snake_len = [3, 3]
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len, init_food_pos=[[0, 1]],
-                               ec=BestBattleSnakeEncodingConfig())
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=[[0, 1]],
+            ec=BestBattleSnakeEncodingConfig(),
+        )
         gc.ec.include_board = False
         gc.ec.include_distance_map = True
         game = BattleSnakeGame(gc)
@@ -113,11 +177,19 @@ class TestWrapped(unittest.TestCase):
         ec = BestBattleSnakeEncodingConfig()
         ec.centered = True
         ec.include_board = False
-        gc = BattleSnakeConfig(w=3, h=3, num_players=2, min_food=0, food_spawn_chance=0, all_actions_legal=True,
-                               wrapped=True,
-                               init_snake_pos=init_snake_pos, init_snake_len=init_snake_len,
-                               init_food_pos=init_food_pos,
-                               ec=ec, )
+        gc = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            all_actions_legal=True,
+            wrapped=True,
+            init_snake_pos=init_snake_pos,
+            init_snake_len=init_snake_len,
+            init_food_pos=init_food_pos,
+            ec=ec,
+        )
         game = BattleSnakeGame(gc)
         # self.assertEqual(3, game.get_obs_shape()[0])
         # self.assertEqual(3, game.get_obs_shape()[1])

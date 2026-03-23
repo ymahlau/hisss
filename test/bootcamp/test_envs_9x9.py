@@ -1,7 +1,8 @@
-
-
 from hisss.game.config import BattleSnakeConfig
-from hisss.game.encoding import BestBattleSnakeEncodingConfig, SimpleConstrictorEncodingConfig
+from hisss.game.encoding import (
+    BestBattleSnakeEncodingConfig,
+    SimpleConstrictorEncodingConfig,
+)
 from hisss.game.rewards import CooperationBattleSnakeRewardConfig
 
 
@@ -31,7 +32,7 @@ def survive_on_9x9_constrictor_4_player() -> BattleSnakeConfig:
 def survive_on_9x9_constrictor_4_player_coop() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig()
     rc = CooperationBattleSnakeRewardConfig()
-    
+
     gc = BattleSnakeConfig(
         w=9,
         h=9,

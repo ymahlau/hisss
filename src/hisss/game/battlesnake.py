@@ -2,13 +2,18 @@ import ctypes as ct
 import itertools
 import math
 import random
-from typing import Optional
+from typing import Optional, Any
 
 import numpy as np
 
 from hisss.cpp.lib import CPP_LIB
 from hisss.game.state import BattleSnakeState
-from hisss.game.config import BattleSnakeConfig, encoding_layer_indices, post_init_battlesnake_cfg, validate_battlesnake_cfg
+from hisss.game.config import (
+    BattleSnakeConfig,
+    encoding_layer_indices,
+    post_init_battlesnake_cfg,
+    validate_battlesnake_cfg,
+)
 from hisss.game.encoding import num_layers_general, layers_per_player, layers_per_enemy
 from hisss.game.rewards import get_battlesnake_reward_func_from_cfg
 from hisss.game.utils import int_to_perm
@@ -21,9 +26,9 @@ LEFT: int = 3
 
 class BattleSnakeGame:
     def __init__(
-            self,
-            cfg: BattleSnakeConfig,
-            state_p = None  # Optional[ct.POINTER(Struct)],
+        self,
+        cfg: BattleSnakeConfig,
+        state_p=None,  # Optional[ct.POINTER(Struct)],
     ):
         self.cfg = cfg
         self._cum_rewards = np.zeros(shape=(self.cfg.num_players,), dtype=float)
@@ -48,7 +53,7 @@ class BattleSnakeGame:
         self.players_alive_last: Optional[list[int]] = None  # property of last step
         self.reward_func = get_battlesnake_reward_func_from_cfg(self.cfg.reward_cfg)
         self.layer_explanation = encoding_layer_indices(self.cfg)
-        
+
     @property
     def num_actions(self):
         return self.cfg.num_actions
@@ -64,7 +69,7 @@ class BattleSnakeGame:
 
     def illegal_actions(self, player: int) -> list[int]:
         if player < 0 or player >= self.num_players:
-            raise ValueError(f'Snake index out of range: {player}')
+            raise ValueError(f"Snake index out of range: {player}")
         all_action_set = {i for i in range(self.num_actions)}
         legal_action_set: set[int] = set(self.available_actions(player))
         illegal_action_set = all_action_set - legal_action_set
@@ -72,12 +77,16 @@ class BattleSnakeGame:
         return illegal_actions
 
     def illegal_joint_actions(self) -> list[tuple[int, ...]]:
-        action_lists = [[i for i in range(self.num_actions)] for _ in range(self.num_players)]
+        action_lists = [
+            [i for i in range(self.num_actions)] for _ in range(self.num_players)
+        ]
         all_action_set: set[tuple[int, ...]] = set(itertools.product(*action_lists))
-        available_joint_action_set: set[tuple[int, ...]] = set(self.available_joint_actions())
+        available_joint_action_set: set[tuple[int, ...]] = set(
+            self.available_joint_actions()
+        )
         illegal_action_set = all_action_set - available_joint_action_set
         return list(illegal_action_set)
-    
+
     def _init_cpp(self):
         # snakes
         spawn_snakes_randomly = True if self.cfg.init_snake_pos is None else False
@@ -95,7 +104,10 @@ class BattleSnakeGame:
             max_body_len = max(body_lengths)
             body_len_arr = np.asarray(body_lengths, dtype=ct.c_int)
             body_len_p = body_len_arr.ctypes.data_as(ct.POINTER(ct.c_int))
-            snake_pos_arr = np.zeros(shape=(self.cfg.num_players, max_body_len, 2), dtype=ct.c_int) - 1
+            snake_pos_arr = (
+                np.zeros(shape=(self.cfg.num_players, max_body_len, 2), dtype=ct.c_int)
+                - 1
+            )
             for s in range(self.cfg.num_players):  # convert dictionary to numpy array
                 for i, pos in enumerate(snake_pos[s]):
                     snake_pos_arr[s, i, 0] = pos[0]
@@ -121,7 +133,9 @@ class BattleSnakeGame:
             num_init_food = -1  # -1 is signal for random food spawning
             food_pos_p = ct.cast(0, ct.POINTER(ct.c_int))  # NULL-Pointer
         elif not self.cfg.init_food_pos:
-            num_init_food = -2  # flag to indicate that no food should be spawned at beginning
+            num_init_food = (
+                -2
+            )  # flag to indicate that no food should be spawned at beginning
             food_pos_p = ct.cast(0, ct.POINTER(ct.c_int))
         else:
             num_init_food = len(self.cfg.init_food_pos)
@@ -186,7 +200,11 @@ class BattleSnakeGame:
         # number of dim
         if self.cfg.ec.flatten and not never_flatten:
             dim = width * height * z_dim
-            return tuple([dim, ])
+            return tuple(
+                [
+                    dim,
+                ]
+            )
         return width, height, z_dim
 
     # reward, done, info as return
@@ -196,20 +214,20 @@ class BattleSnakeGame:
         reward, done, info = step(action)
         """
         if self.is_terminal():
-            raise Exception('Cannot call step on terminal state')
+            raise Exception("Cannot call step on terminal state")
         if len(actions) != self.num_players_at_turn():
             raise ValueError(f"Invalid action length: {actions}")
         if actions not in self.available_joint_actions():
-            raise ValueError(f'Calling step with non-legal actions: {actions}')
+            raise ValueError(f"Calling step with non-legal actions: {actions}")
         reward, done, info = self._step(actions)
         self._cum_rewards += reward
         self._last_actions = actions
         self.turns_played += 1
         return reward, done, info
-    
+
     def _step(
-            self,
-            actions: tuple[int, ...],
+        self,
+        actions: tuple[int, ...],
     ) -> tuple[np.ndarray, bool, dict]:
         # test if actions are actually legal to perform
         if self.is_closed:
@@ -231,26 +249,28 @@ class BattleSnakeGame:
         self.players_alive_save = None
         # compute return values
         done = self.is_terminal()
-        rewards = self.reward_func(done, self.num_players, self.players_at_turn(), self.players_at_turn_last)
+        rewards = self.reward_func(
+            done, self.num_players, self.players_at_turn(), self.players_at_turn_last
+        )
         return rewards, done, {}
-    
+
     def get_copy(self) -> "BattleSnakeGame":
         cpy = self._get_copy()
         cpy._last_actions = self._last_actions
         cpy._cum_rewards = self._cum_rewards.copy()
         cpy.turns_played = self.turns_played
         return cpy
-    
+
     def is_player_at_turn(self, player: int) -> bool:
         return player in self.players_at_turn()
-    
+
     @property
     def num_players(self) -> int:
         return self.cfg.num_players
 
     def num_players_at_turn(self) -> int:
         return len(self.players_at_turn())
-    
+
     def players_not_alive(self) -> list[int]:
         result = set(range(self.num_players)) - set(self.players_alive())
         return list(result)
@@ -266,7 +286,7 @@ class BattleSnakeGame:
 
     def set_last_actions(self, last_actions: Optional[tuple[int, ...]]):
         self._last_actions = last_actions
-        
+
     def get_cum_rewards(self) -> np.ndarray:
         return self._cum_rewards
 
@@ -278,7 +298,7 @@ class BattleSnakeGame:
         while (not self.is_terminal()) and steps > 0:
             steps -= 1
             self.step(rndm.choice(self.available_joint_actions()))
-            
+
     def get_last_action(self) -> Optional[tuple[int, ...]]:
         return self._last_actions
 
@@ -307,7 +327,7 @@ class BattleSnakeGame:
     def close(self):
         CPP_LIB.lib.close_cpp(self.state_p)
         self.is_closed = True
-        
+
     def reset(self):
         self._cum_rewards = np.zeros(shape=(self.num_players,), dtype=float)
         self._last_actions = None
@@ -325,12 +345,14 @@ class BattleSnakeGame:
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         if player < 0 or player >= self.cfg.num_players:
-            raise ValueError(f'Snake index out of range: {player}')
+            raise ValueError(f"Snake index out of range: {player}")
         if not self.is_player_alive(player):
             return []  # what is dead cannot move
         if self.cfg.all_actions_legal:
             return [0, 1, 2, 3]
-        if player in self.available_actions_save:  # use saved actions from last function call
+        if (
+            player in self.available_actions_save
+        ):  # use saved actions from last function call
             return self.available_actions_save[player]
         # ask c++ lib what actions are legal
         legal_actions = np.zeros(shape=(self.cfg.num_actions,), dtype=ct.c_int)
@@ -383,13 +405,17 @@ class BattleSnakeGame:
         CPP_LIB.lib.snake_health_cpp(self.state_p, res_p)
         return list(res_arr)
 
-    def player_pos(self, player: int) -> list[tuple[int, int]]:  # returns list of length BODY_LEN != SNAKE_LEN
+    def player_pos(
+        self, player: int
+    ) -> list[tuple[int, int]]:  # returns list of length BODY_LEN != SNAKE_LEN
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # this is inefficient and should only be used for debugging
         body_len = CPP_LIB.lib.snake_body_length_cpp(self.state_p, player)
         res_arr = np.zeros(shape=(body_len, 2), dtype=ct.c_int)
-        CPP_LIB.lib.snake_pos_cpp(self.state_p, player, res_arr.ctypes.data_as(ct.POINTER(ct.c_int)))
+        CPP_LIB.lib.snake_pos_cpp(
+            self.state_p, player, res_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        )
         res_list = []
         for idx in range(res_arr.shape[0]):
             res_list.append((res_arr[idx, 0], res_arr[idx, 1]))
@@ -425,7 +451,9 @@ class BattleSnakeGame:
             raise ValueError("Cannot call function on closed game")
         n = self.num_food()
         res_arr = np.zeros(shape=(n, 2), dtype=ct.c_int)
-        CPP_LIB.lib.food_pos_cpp(self.state_p, res_arr.ctypes.data_as(ct.POINTER(ct.c_int)))
+        CPP_LIB.lib.food_pos_cpp(
+            self.state_p, res_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        )
         return res_arr
 
     def is_terminal(self) -> bool:
@@ -440,11 +468,11 @@ class BattleSnakeGame:
             return self.num_players_at_turn() <= 1
 
     def area_control(
-            self,
-            weight: float = 1.0,  # weight of normal tile
-            food_weight: float = 1.0,
-            hazard_weight: float = 1.0,
-            food_in_hazard_weight: float = 1.0,
+        self,
+        weight: float = 1.0,  # weight of normal tile
+        food_weight: float = 1.0,
+        hazard_weight: float = 1.0,
+        food_in_hazard_weight: float = 1.0,
     ) -> dict[str, np.ndarray]:
         """
         Args:
@@ -469,7 +497,7 @@ class BattleSnakeGame:
             weight,
             food_weight,
             hazard_weight,
-            food_in_hazard_weight
+            food_in_hazard_weight,
         )
         res_dict = {
             "area_control": ac,
@@ -495,12 +523,14 @@ class BattleSnakeGame:
         return str_repr
 
     def _get_cpp_encoding(
-            self,
-            player: int,
-            temperatures: Optional[list[float]],
-            single_temperature: Optional[bool],
+        self,
+        player: int,
+        temperatures: Optional[list[float]],
+        single_temperature: Optional[bool],
     ):
-        obs_arr = np.zeros(shape=self.get_obs_shape(never_flatten=True), dtype=np.float32)
+        obs_arr = np.zeros(
+            shape=self.get_obs_shape(never_flatten=True), dtype=np.float32
+        )
         obs_p = obs_arr.ctypes.data_as(ct.POINTER(ct.c_float))
         t_arr = np.asarray(temperatures, dtype=ct.c_float)
         t_p = t_arr.ctypes.data_as(ct.POINTER(ct.c_float))
@@ -528,17 +558,19 @@ class BattleSnakeGame:
             self.cfg.ec.include_num_food_on_board,
             self.cfg.ec.fixed_food_spawn_chance,
             self.cfg.ec.temperature_input,
-            self.cfg.ec.single_temperature_input if single_temperature is None else single_temperature,
+            self.cfg.ec.single_temperature_input
+            if single_temperature is None
+            else single_temperature,
             t_p,
         )
         return obs_arr
 
     def _get_custom_state_encoding(
-            self,
-            player: int,
-            perm: Optional[np.ndarray],
-            temperatures: Optional[list[float]],
-            single_temperature: Optional[bool],
+        self,
+        player: int,
+        perm: Optional[np.ndarray],
+        temperatures: Optional[list[float]],
+        single_temperature: Optional[bool],
     ) -> np.ndarray:
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
@@ -571,7 +603,7 @@ class BattleSnakeGame:
             obs_arr[:, :, left] = obs_arr[:, :, right]
         return obs_arr
 
-    def __eq__(self, other: "BattleSnakeGame"):
+    def __eq__(self, other: Any):
         if not isinstance(other, BattleSnakeGame):
             return False
         if self.is_closed:
@@ -588,8 +620,8 @@ class BattleSnakeGame:
             return 8 * math.factorial(self.cfg.num_players - 1)
 
     def get_obs(
-            self,
-            symmetry: Optional[int] = 0,
+        self,
+        symmetry: Optional[int] = 0,
     ) -> tuple[
         np.ndarray,
         dict[int, int],
@@ -602,20 +634,26 @@ class BattleSnakeGame:
         if self.is_terminal():
             raise ValueError("Cannot get encoding on terminal state")
         if not self.cfg.ec.temperature_input and temperatures is not None:
-            raise ValueError(f"Cannot process temperatures if ec specifies no input")
+            raise ValueError("Cannot process temperatures if ec specifies no input")
         if self.cfg.ec.temperature_input:
-            single_temp = self.cfg.ec.single_temperature_input if single_temperature is None else single_temperature
+            single_temp = (
+                self.cfg.ec.single_temperature_input
+                if single_temperature is None
+                else single_temperature
+            )
             if temperatures is None:
-                raise ValueError(f"Need temperatures to generate encoding")
+                raise ValueError("Need temperatures to generate encoding")
             if single_temp and len(temperatures) != 1:
-                raise ValueError(f"Cannot process multiple temperatures if single temperature input specified")
+                raise ValueError(
+                    "Cannot process multiple temperatures if single temperature input specified"
+                )
             if not single_temp and len(temperatures) != self.num_players:
                 raise ValueError(f"Invalid temperature length: {temperatures}")
         if symmetry is None:
             symmetry = np.random.randint(self.get_symmetry_count())
         # last 3 bits of symmetry represent rotation and flip
         sym_rot = symmetry % 8
-        flip = (sym_rot % 2 == 1)  # if symmetry is odd then mirror it
+        flip = sym_rot % 2 == 1  # if symmetry is odd then mirror it
         num_rot = math.floor(sym_rot / 2)
         # symmetry except last 3 bit describes player permutation
         sym_player = math.floor(symmetry / 8)
@@ -659,32 +697,71 @@ class BattleSnakeGame:
         if self.cfg.view_radius is not None:
             masks = []
             for p_self in self.players_at_turn():
-                scaled_distance = result[p_self, :, :, self.layer_explanation['distance_map']]
+                scaled_distance = result[
+                    p_self, :, :, self.layer_explanation["distance_map"]
+                ]
                 distance_map = scaled_distance * (self.cfg.w + self.cfg.h - 2)
                 cur_mask = (distance_map <= self.cfg.view_radius).astype(float)
                 masks.append(cur_mask)
-                if 'current_food' in self.layer_explanation:
-                    cur_layer = result[p_self, :, :, self.layer_explanation['current_food']]
-                    result[p_self, :, :, self.layer_explanation['current_food']] = cur_layer * cur_mask
-                for p in range(1, self.num_players):  # do not restrict view on own player
-                    if f'{p}_snake_health' in self.layer_explanation:
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_health']] = 0
-                    if f'{p}_snake_length' in self.layer_explanation:
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_length']] = 0
-                    if f'{p}_snake_tail_distance' in self.layer_explanation:
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail_distance']] = 0
-                    if f'{p}_snake_body' in self.layer_explanation:
-                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_body']]
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_body']] = cur_layer * cur_mask
-                    if f'{p}_snake_body_as_one_hot' in self.layer_explanation:
-                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_body_as_one_hot']]
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_body_as_one_hot']] = cur_layer * cur_mask
-                    if f'{p}_snake_head' in self.layer_explanation:
-                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_head']]
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_head']] = cur_layer * cur_mask
-                    if f'{p}_snake_tail' in self.layer_explanation:
-                        cur_layer = result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail']]
-                        result[p_self, :, :, self.layer_explanation[f'{p}_snake_tail']] = cur_layer * cur_mask
+                if "current_food" in self.layer_explanation:
+                    cur_layer = result[
+                        p_self, :, :, self.layer_explanation["current_food"]
+                    ]
+                    result[p_self, :, :, self.layer_explanation["current_food"]] = (
+                        cur_layer * cur_mask
+                    )
+                for p in range(
+                    1, self.num_players
+                ):  # do not restrict view on own player
+                    if f"{p}_snake_health" in self.layer_explanation:
+                        result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_health"]
+                        ] = 0
+                    if f"{p}_snake_length" in self.layer_explanation:
+                        result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_length"]
+                        ] = 0
+                    if f"{p}_snake_tail_distance" in self.layer_explanation:
+                        result[
+                            p_self,
+                            :,
+                            :,
+                            self.layer_explanation[f"{p}_snake_tail_distance"],
+                        ] = 0
+                    if f"{p}_snake_body" in self.layer_explanation:
+                        cur_layer = result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_body"]
+                        ]
+                        result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_body"]
+                        ] = cur_layer * cur_mask
+                    if f"{p}_snake_body_as_one_hot" in self.layer_explanation:
+                        cur_layer = result[
+                            p_self,
+                            :,
+                            :,
+                            self.layer_explanation[f"{p}_snake_body_as_one_hot"],
+                        ]
+                        result[
+                            p_self,
+                            :,
+                            :,
+                            self.layer_explanation[f"{p}_snake_body_as_one_hot"],
+                        ] = cur_layer * cur_mask
+                    if f"{p}_snake_head" in self.layer_explanation:
+                        cur_layer = result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_head"]
+                        ]
+                        result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_head"]
+                        ] = cur_layer * cur_mask
+                    if f"{p}_snake_tail" in self.layer_explanation:
+                        cur_layer = result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_tail"]
+                        ]
+                        result[
+                            p_self, :, :, self.layer_explanation[f"{p}_snake_tail"]
+                        ] = cur_layer * cur_mask
             # make mask layer
             if self.cfg.ec.include_view_mask:
                 mask_arr = np.asarray(masks)
@@ -698,7 +775,7 @@ class BattleSnakeGame:
 
     def get_bool_board_matrix(self) -> np.ndarray:
         if not self.cfg.constrictor:
-            raise ValueError(f"Board matrix currently only supported in constrictor")
+            raise ValueError("Board matrix currently only supported in constrictor")
         arr = np.zeros((self.cfg.w, self.cfg.h), dtype=ct.c_int8)
         arr_p = arr.ctypes.data_as(ct.POINTER(ct.c_int8))
         CPP_LIB.lib.char_game_matrix_cpp(self.state_p, arr_p)
@@ -709,7 +786,10 @@ class BattleSnakeGame:
         snakes_alive_bool = [i in snakes_alive for i in range(self.num_players)]
         player_pos = {i: self.player_pos(i) for i in range(self.num_players)}
         food_pos_arr = self.food_pos()
-        food_list = [[food_pos_arr[i, 0], food_pos_arr[i, 1]] for i in range(food_pos_arr.shape[0])]
+        food_list = [
+            [food_pos_arr[i, 0], food_pos_arr[i, 1]]
+            for i in range(food_pos_arr.shape[0])
+        ]
         snake_health = self.player_healths()
         snake_len = self.player_lengths()
         state = BattleSnakeState(
@@ -721,7 +801,7 @@ class BattleSnakeGame:
             turn=self.turns_played,
         )
         return state
-    
+
     def set_state(self, state: BattleSnakeState):
         self._cum_rewards = np.zeros(shape=(self.cfg.num_players,), dtype=float)
         self._last_actions = None
@@ -743,7 +823,9 @@ class BattleSnakeGame:
         max_body_len = max(body_lengths)
         body_len_arr = np.asarray(body_lengths, dtype=ct.c_int)
         body_len_p = body_len_arr.ctypes.data_as(ct.POINTER(ct.c_int))
-        snake_pos_arr = np.zeros(shape=(self.cfg.num_players, max_body_len, 2), dtype=ct.c_int) - 1
+        snake_pos_arr = (
+            np.zeros(shape=(self.cfg.num_players, max_body_len, 2), dtype=ct.c_int) - 1
+        )
         for s in range(self.cfg.num_players):  # convert dictionary to numpy array
             for i, pos in enumerate(snake_pos[s]):
                 snake_pos_arr[s, i, 0] = pos[0]

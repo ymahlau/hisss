@@ -1,8 +1,14 @@
-
-
 from hisss.game.config import BattleSnakeConfig
-from hisss.game.encoding import SimpleBattleSnakeEncodingConfig, SimpleConstrictorEncodingConfig, VanillaBattleSnakeEncodingConfig
-from hisss.game.rewards import CooperationBattleSnakeRewardConfig, KillBattleSnakeRewardConfig, StandardBattleSnakeRewardConfig
+from hisss.game.encoding import (
+    SimpleBattleSnakeEncodingConfig,
+    SimpleConstrictorEncodingConfig,
+    VanillaBattleSnakeEncodingConfig,
+)
+from hisss.game.rewards import (
+    CooperationBattleSnakeRewardConfig,
+    KillBattleSnakeRewardConfig,
+    StandardBattleSnakeRewardConfig,
+)
 
 
 def perform_choke_11x11(centered: bool) -> BattleSnakeConfig:
@@ -25,6 +31,7 @@ def perform_choke_11x11(centered: bool) -> BattleSnakeConfig:
     )
     return gc
 
+
 def survive_on_11x11() -> BattleSnakeConfig:
     ec = VanillaBattleSnakeEncodingConfig()
     ec.centered = True
@@ -41,6 +48,7 @@ def survive_on_11x11() -> BattleSnakeConfig:
         reward_cfg=StandardBattleSnakeRewardConfig(),
     )
     return gc
+
 
 def survive_on_11x11_4_player(centered: bool) -> BattleSnakeConfig:
     ec = VanillaBattleSnakeEncodingConfig()
@@ -117,10 +125,11 @@ def survive_on_11x11_4_player_royale() -> BattleSnakeConfig:
     )
     return gc
 
+
 def survive_on_11x11_constrictor_4_player_coop() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig()
     rc = CooperationBattleSnakeRewardConfig()
-    
+
     gc = BattleSnakeConfig(
         w=11,
         h=11,
@@ -131,4 +140,3 @@ def survive_on_11x11_constrictor_4_player_coop() -> BattleSnakeConfig:
         constrictor=True,
     )
     return gc
-

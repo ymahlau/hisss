@@ -1,7 +1,7 @@
 import ctypes as ct
 import sys
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 import numpy as np
 
@@ -10,12 +10,12 @@ file_path = Path(__file__)
 
 def _find_library() -> Path:
     compiled_dir = file_path.parent
-    if sys.platform == 'win32':
-        candidates = [compiled_dir / 'link.dll']
-    elif sys.platform == 'darwin':
-        candidates = [compiled_dir / 'liblink.dylib', compiled_dir / 'liblink.so']
+    if sys.platform == "win32":
+        candidates = [compiled_dir / "link.dll"]
+    elif sys.platform == "darwin":
+        candidates = [compiled_dir / "liblink.dylib", compiled_dir / "liblink.so"]
     else:
-        candidates = [compiled_dir / 'liblink.so']
+        candidates = [compiled_dir / "liblink.so"]
     for candidate in candidates:
         if candidate.exists():
             return candidate
@@ -32,7 +32,7 @@ class Struct(ct.Structure):
 
 class CPPLibrary:
     def __init__(
-            self,
+        self,
     ):
         self.lib = ct.cdll.LoadLibrary(str(_find_library()))
         self._init_functions()
@@ -72,7 +72,9 @@ class CPPLibrary:
         self.lib.actions_cpp.argtypes = [
             ct.POINTER(Struct),
             ct.c_int,
-            np.ctypeslib.ndpointer(dtype=ct.c_int, ndim=1, shape=(4,), flags='C_CONTIGUOUS'),
+            np.ctypeslib.ndpointer(
+                dtype=ct.c_int, ndim=1, shape=(4,), flags="C_CONTIGUOUS"
+            ),
         ]
         self.lib.equals_cpp.argtypes = [
             ct.POINTER(Struct),
@@ -158,7 +160,7 @@ class CPPLibrary:
             ct.POINTER(Struct),
             ct.POINTER(ct.c_bool),
         ]
-        
+
         self.lib.compute_nash_cpp.argtypes = [
             ct.c_int,
             ct.POINTER(ct.c_int),
@@ -172,20 +174,20 @@ class CPPLibrary:
         self.lib.set_seed.argtypes = [
             ct.c_int,
         ]
-        
+
         self.lib.char_game_matrix_cpp.argtypes = [
             ct.POINTER(Struct),
             ct.POINTER(ct.c_int8),
         ]
 
     def get_area_control(
-            self,
-            num_snakes: int,
-            state_p,  # ct.POINTER(Struct)
-            weight: float,
-            food_weight: float,
-            hazard_weight: float,
-            food_in_hazard_weight: float,
+        self,
+        num_snakes: int,
+        state_p,  # ct.POINTER(Struct)
+        weight: float,
+        food_weight: float,
+        hazard_weight: float,
+        food_in_hazard_weight: float,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         # area array
         area_control_arr = np.zeros(shape=(num_snakes,), dtype=ct.c_float)
@@ -212,29 +214,45 @@ class CPPLibrary:
             weight,
             food_weight,
             hazard_weight,
-            food_in_hazard_weight
+            food_in_hazard_weight,
         )
-        return area_control_arr, food_dist_arr, tail_dist_arr, reached_tail_arr, reached_food_arr
+        return (
+            area_control_arr,
+            food_dist_arr,
+            tail_dist_arr,
+            reached_tail_arr,
+            reached_food_arr,
+        )
 
     def compute_nash(
-            self,
-            available_actions: list[list[int]],  # maps player(index of player_at_turn) to available actions
-            joint_action_list: list[tuple[int, ...]],
-            joint_action_value_arr: np.ndarray,  # shape (num_joint_actions, num_player_at_turn)
-            error_counter = None,  # mp.Array
+        self,
+        available_actions: list[
+            list[int]
+        ],  # maps player(index of player_at_turn) to available actions
+        joint_action_list: list[tuple[int, ...]],
+        joint_action_value_arr: np.ndarray,  # shape (num_joint_actions, num_player_at_turn)
+        error_counter=None,  # mp.Array
     ) -> tuple[list[float], list[np.ndarray]]:
         # number of players and actions
         num_player = len(available_actions)
-        num_available_actions = np.asarray([len(available_actions[p]) for p in range(num_player)], dtype=ct.c_int)
-        num_available_actions_p = num_available_actions.ctypes.data_as(ct.POINTER(ct.c_int))
+        num_available_actions = np.asarray(
+            [len(available_actions[p]) for p in range(num_player)], dtype=ct.c_int
+        )
+        num_available_actions_p = num_available_actions.ctypes.data_as(
+            ct.POINTER(ct.c_int)
+        )
         # available actions
         flat_action_list = [a for sublist in available_actions for a in sublist]
         available_actions_arr = np.asarray(flat_action_list, dtype=ct.c_int)
         available_actions_p = available_actions_arr.ctypes.data_as(ct.POINTER(ct.c_int))
         joint_actions_arr = np.asarray(joint_action_list, dtype=ct.c_int).flatten()
         joint_actions_p = joint_actions_arr.ctypes.data_as(ct.POINTER(ct.c_int))
-        joint_action_value_arr_flat = joint_action_value_arr.astype(ct.c_double).flatten()
-        joint_action_value_p = joint_action_value_arr_flat.ctypes.data_as(ct.POINTER(ct.c_double))
+        joint_action_value_arr_flat = joint_action_value_arr.astype(
+            ct.c_double
+        ).flatten()
+        joint_action_value_p = joint_action_value_arr_flat.ctypes.data_as(
+            ct.POINTER(ct.c_double)
+        )
         # result arrays
         result_values = np.zeros(shape=(num_player,), dtype=ct.c_double)
         result_values_p = result_values.ctypes.data_as(ct.POINTER(ct.c_double))
@@ -252,7 +270,7 @@ class CPPLibrary:
         if res_code != 0:
             # raise Exception(f'Unknown c++ Nash error: {available_actions=}\n\n {joint_action_list=}\n\n'
             #                 f' {joint_action_value_arr=}')
-            print('C++ Nash Error (probably due to numerical issues)', flush=True)
+            print("C++ Nash Error (probably due to numerical issues)", flush=True)
             if error_counter is not None:
                 with error_counter.get_lock():
                     error_counter.value += 1
@@ -260,7 +278,9 @@ class CPPLibrary:
             value_list = list(avg_values)
             result_policy_list = []
             for aa in available_actions:
-                result_policy_list.append(np.ones(shape=(len(aa),), dtype=ct.c_float) / len(aa))
+                result_policy_list.append(
+                    np.ones(shape=(len(aa),), dtype=ct.c_float) / len(aa)
+                )
         else:
             value_list = list(result_values)
             result_policy_list = []

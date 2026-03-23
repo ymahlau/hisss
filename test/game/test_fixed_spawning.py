@@ -6,14 +6,23 @@ from hisss.game.config import BattleSnakeConfig
 
 
 class TestFixedSpawning(unittest.TestCase):
-
     def test_init_health(self):
         snake_spawns = {0: [[0, 0]], 1: [[1, 0]]}
         snake_health = [3, 2]
         food_pos = []
-        gc = BattleSnakeConfig(h=11, w=11, num_players=2, min_food=0, food_spawn_chance=0, init_snake_pos=snake_spawns,
-                               init_snake_health=snake_health, init_food_pos=food_pos, init_turns_played=3,
-                               init_snake_len=[3, 3], all_actions_legal=True)
+        gc = BattleSnakeConfig(
+            h=11,
+            w=11,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_pos=snake_spawns,
+            init_snake_health=snake_health,
+            init_food_pos=food_pos,
+            init_turns_played=3,
+            init_snake_len=[3, 3],
+            all_actions_legal=True,
+        )
         env = BattleSnakeGame(cfg=gc)
         actions = (UP, UP)
         env.render()
@@ -33,8 +42,16 @@ class TestFixedSpawning(unittest.TestCase):
         snake_spawns = {0: [[0, 0]], 1: [[1, 1]]}
         init_snake_len = [2, 2]
         food_pos = []
-        gc = BattleSnakeConfig(h=2, w=2, num_players=2, min_food=0, food_spawn_chance=0, init_snake_pos=snake_spawns,
-                               init_snake_len=init_snake_len, init_food_pos=food_pos)
+        gc = BattleSnakeConfig(
+            h=2,
+            w=2,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_pos=snake_spawns,
+            init_snake_len=init_snake_len,
+            init_food_pos=food_pos,
+        )
         env = BattleSnakeGame(cfg=gc)
         lens = env.player_lengths()
         self.assertEqual(2, lens[0])
@@ -62,8 +79,16 @@ class TestFixedSpawning(unittest.TestCase):
         snake_spawns = {0: [[0, 0]], 1: [[2, 0]]}
         init_snake_len = [1, 2]
         food_pos = []
-        gc = BattleSnakeConfig(h=1, w=3, num_players=2, min_food=0, food_spawn_chance=0, init_snake_pos=snake_spawns,
-                               init_snake_len=init_snake_len, init_food_pos=food_pos)
+        gc = BattleSnakeConfig(
+            h=1,
+            w=3,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_pos=snake_spawns,
+            init_snake_len=init_snake_len,
+            init_food_pos=food_pos,
+        )
         env = BattleSnakeGame(cfg=gc)
         lens = env.player_lengths()
         self.assertEqual(1, lens[0])

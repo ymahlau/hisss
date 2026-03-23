@@ -1,7 +1,12 @@
-
 from hisss.game.config import BattleSnakeConfig
-from hisss.game.encoding import SimpleConstrictorEncodingConfig, VanillaBattleSnakeEncodingConfig
-from hisss.game.rewards import CooperationBattleSnakeRewardConfig, KillBattleSnakeRewardConfig
+from hisss.game.encoding import (
+    SimpleConstrictorEncodingConfig,
+    VanillaBattleSnakeEncodingConfig,
+)
+from hisss.game.rewards import (
+    CooperationBattleSnakeRewardConfig,
+    KillBattleSnakeRewardConfig,
+)
 
 
 def survive_on_7x7() -> BattleSnakeConfig:
@@ -19,6 +24,7 @@ def survive_on_7x7() -> BattleSnakeConfig:
         all_actions_legal=False,
     )
     return gc
+
 
 def survive_on_7x7_4_player() -> BattleSnakeConfig:
     ec = VanillaBattleSnakeEncodingConfig()
@@ -65,6 +71,7 @@ def survive_on_7x7_constrictor_4_player() -> BattleSnakeConfig:
         reward_cfg=KillBattleSnakeRewardConfig(),
     )
     return gc
+
 
 def cooperation_7x7() -> BattleSnakeConfig:
     ec = SimpleConstrictorEncodingConfig()
@@ -114,7 +121,7 @@ def title_cfg_4d7() -> BattleSnakeConfig:
             [3, 6],
             [2, 6],
             [2, 5],
-            [1, 5]
+            [1, 5],
         ],
         1: [
             [1, 4],
@@ -151,7 +158,7 @@ def title_cfg_4d7() -> BattleSnakeConfig:
             [6, 6],
             [5, 6],
             [5, 5],
-        ]
+        ],
     }
     ec = SimpleConstrictorEncodingConfig()
     game_cfg = BattleSnakeConfig(

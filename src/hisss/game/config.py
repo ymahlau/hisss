@@ -1,8 +1,17 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from hisss.game.encoding import BattleSnakeEncodingConfig, BestBattleSnakeEncodingConfig, BestRestrictedEncodingConfig, SimpleBattleSnakeEncodingConfig, VanillaBattleSnakeEncodingConfig
-from hisss.game.rewards import BattleSnakeRewardConfig, KillBattleSnakeRewardConfig, StandardBattleSnakeRewardConfig
+from hisss.game.encoding import (
+    BattleSnakeEncodingConfig,
+    BestBattleSnakeEncodingConfig,
+    BestRestrictedEncodingConfig,
+    SimpleBattleSnakeEncodingConfig,
+)
+from hisss.game.rewards import (
+    BattleSnakeRewardConfig,
+    KillBattleSnakeRewardConfig,
+    StandardBattleSnakeRewardConfig,
+)
 
 
 @dataclass
@@ -13,7 +22,9 @@ class BattleSnakeConfig:
     w: int = 5
     h: int = 5
     # encoding
-    ec: BattleSnakeEncodingConfig = field(default_factory=SimpleBattleSnakeEncodingConfig)
+    ec: BattleSnakeEncodingConfig = field(
+        default_factory=SimpleBattleSnakeEncodingConfig
+    )
     # snakes
     all_actions_legal: bool = False
     max_snake_health: Optional[list[int]] = None
@@ -22,13 +33,21 @@ class BattleSnakeConfig:
     food_spawn_chance: int = 15
     # game state initialization
     init_turns_played: int = 0
-    init_snakes_alive: Optional[list[bool]] = None  # if this is None, all snakes are alive
-    init_snake_pos: Optional[dict[int, list[list[int]]]] = None  # if this is None, snakes spawn randomly
-    init_food_pos: Optional[list[list[int]]] = None  # if None spawn food randomly, if [] spawn no food
+    init_snakes_alive: Optional[list[bool]] = (
+        None  # if this is None, all snakes are alive
+    )
+    init_snake_pos: Optional[dict[int, list[list[int]]]] = (
+        None  # if this is None, snakes spawn randomly
+    )
+    init_food_pos: Optional[list[list[int]]] = (
+        None  # if None spawn food randomly, if [] spawn no food
+    )
     init_snake_health: Optional[list[int]] = None
     init_snake_len: Optional[list[int]] = None
     # rewards
-    reward_cfg: BattleSnakeRewardConfig = field(default_factory=StandardBattleSnakeRewardConfig)
+    reward_cfg: BattleSnakeRewardConfig = field(
+        default_factory=StandardBattleSnakeRewardConfig
+    )
     # special game modes
     wrapped: bool = False
     royale: bool = False
@@ -37,6 +56,7 @@ class BattleSnakeConfig:
     hazard_damage: int = 14
     init_hazards: Optional[list[list[int]]] = None
     view_radius: int | None = None
+
 
 def post_init_battlesnake_cfg(cfg: BattleSnakeConfig):
     # default parameter initialization
@@ -59,6 +79,7 @@ def post_init_battlesnake_cfg(cfg: BattleSnakeConfig):
         cfg.food_spawn_chance = 0
         cfg.min_food = 0
 
+
 def validate_battlesnake_cfg(cfg: BattleSnakeConfig):
     # ran post init
     assert cfg.init_hazards is not None
@@ -69,13 +90,21 @@ def validate_battlesnake_cfg(cfg: BattleSnakeConfig):
     if cfg.init_food_pos is not None:
         assert len(cfg.init_food_pos) >= cfg.min_food
         if cfg.init_food_pos:
-            assert cfg.init_snake_pos is not None, "You cannot spawn snakes randomly and food fixed"
+            assert cfg.init_snake_pos is not None, (
+                "You cannot spawn snakes randomly and food fixed"
+            )
     if cfg.init_snake_pos is not None:
         assert len(cfg.init_snake_pos) == cfg.num_players
-        assert cfg.init_food_pos is not None, "You cannot spawn snakes fixed and food randomly"
+        assert cfg.init_food_pos is not None, (
+            "You cannot spawn snakes fixed and food randomly"
+        )
     if cfg.w != cfg.h or cfg.w % 2 == 0 or cfg.h % 2 == 0:
-        assert cfg.init_snake_pos is not None, "Cannot spawn snakes randomly on weird board shapes"
-        assert cfg.init_food_pos is not None, "Cannot spawn food randomly on weird board shapes"
+        assert cfg.init_snake_pos is not None, (
+            "Cannot spawn snakes randomly on weird board shapes"
+        )
+        assert cfg.init_food_pos is not None, (
+            "Cannot spawn food randomly on weird board shapes"
+        )
     # health, lengths, turns
     assert len(cfg.init_snake_health) == cfg.num_players
     for i in range(cfg.num_players):
@@ -85,21 +114,35 @@ def validate_battlesnake_cfg(cfg: BattleSnakeConfig):
     assert cfg.init_turns_played >= 0
     # game modes
     if cfg.w != cfg.h or cfg.w % 2 != 1:
-        assert not cfg.ec.centered, "Can only center observation in odd-sized square boards"
+        assert not cfg.ec.centered, (
+            "Can only center observation in odd-sized square boards"
+        )
     if cfg.wrapped:
-        assert not cfg.ec.include_board, "You do not want to include borders in wrapped mode"
+        assert not cfg.ec.include_board, (
+            "You do not want to include borders in wrapped mode"
+        )
     if cfg.royale:
         assert cfg.w == cfg.h, "Royale Mode only works with square boards"
     if cfg.constrictor:
         assert len(cfg.init_hazards) == 0, "Constrictor does not work with hazards"
         assert not cfg.royale, "Constrictor does not work with royale"
     if cfg.view_radius is not None:
-        assert cfg.ec.include_distance_map, "Restricted mode needs distance map to calculate observation mask"
-        assert not cfg.ec.include_area_control, "Restricted mode cannot use area control in observations"
-        assert not cfg.ec.include_food_distance, "Restricted mode cannot use food distance in observations"
-        assert not cfg.ec.include_num_food_on_board, "Restricted mode cannot use number of food on the board in obs"
+        assert cfg.ec.include_distance_map, (
+            "Restricted mode needs distance map to calculate observation mask"
+        )
+        assert not cfg.ec.include_area_control, (
+            "Restricted mode cannot use area control in observations"
+        )
+        assert not cfg.ec.include_food_distance, (
+            "Restricted mode cannot use food distance in observations"
+        )
+        assert not cfg.ec.include_num_food_on_board, (
+            "Restricted mode cannot use number of food on the board in obs"
+        )
     if cfg.ec.include_view_mask:
-        assert cfg.view_radius is not None, "Can only include view mask in obs if view_radius is set in game config"
+        assert cfg.view_radius is not None, (
+            "Can only include view mask in obs if view_radius is set in game config"
+        )
 
 
 def encoding_layer_indices(game_cfg: BattleSnakeConfig) -> dict[str, int]:
@@ -159,7 +202,7 @@ def encoding_layer_indices(game_cfg: BattleSnakeConfig) -> dict[str, int]:
             res_dict[f"{p}_tail_distance"] = layer_counter
             layer_counter += 1
     if ec.include_view_mask:
-        res_dict[f"view_mask"] = layer_counter
+        res_dict["view_mask"] = layer_counter
         layer_counter += 1
     return res_dict
 
@@ -180,6 +223,7 @@ def duel_config() -> BattleSnakeConfig:
     )
     return gc
 
+
 def standard_config() -> BattleSnakeConfig:
     ec = BestBattleSnakeEncodingConfig()
     gc = BattleSnakeConfig(
@@ -194,6 +238,7 @@ def standard_config() -> BattleSnakeConfig:
         reward_cfg=KillBattleSnakeRewardConfig(),
     )
     return gc
+
 
 def restricted_standard_config() -> BattleSnakeConfig:
     ec = BestRestrictedEncodingConfig()
@@ -210,6 +255,7 @@ def restricted_standard_config() -> BattleSnakeConfig:
         view_radius=5,
     )
     return gc
+
 
 def restricted_duel_config() -> BattleSnakeConfig:
     ec = BestRestrictedEncodingConfig()

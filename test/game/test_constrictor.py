@@ -70,4 +70,3 @@ class TestConstrictor(unittest.TestCase):
         arr = game.get_bool_board_matrix()
         print(arr)
         self.assertEqual(7, np.sum(arr))
-

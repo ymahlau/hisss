@@ -1,9 +1,10 @@
 import math
 import numpy as np
 
+
 def int_to_perm(
-        seed: int,
-        n: int,
+    seed: int,
+    n: int,
 ) -> np.ndarray:
     """
     Uniquely maps integer to a permutation. The seed has to be less than n!

@@ -7,7 +7,7 @@ class BattleSnakeEncodingConfig:
     include_next_food: bool
     include_board: bool
     include_number_of_turns: bool
-    compress_enemies: bool # enemies share their encoding layers
+    compress_enemies: bool  # enemies share their encoding layers
     include_snake_body_as_one_hot: bool
     include_snake_body: bool
     include_snake_head: bool
@@ -27,20 +27,36 @@ class BattleSnakeEncodingConfig:
     fixed_food_spawn_chance: float = -1  # -1 is the code for using default game value
     include_view_mask: bool = False
 
+
 def num_layers_general(cfg: BattleSnakeEncodingConfig) -> int:
-    result = cfg.include_current_food + cfg.include_next_food \
-                     + cfg.include_board + cfg.include_number_of_turns \
-                     + cfg.include_distance_map + cfg.include_hazards + cfg.include_num_food_on_board
+    result = (
+        cfg.include_current_food
+        + cfg.include_next_food
+        + cfg.include_board
+        + cfg.include_number_of_turns
+        + cfg.include_distance_map
+        + cfg.include_hazards
+        + cfg.include_num_food_on_board
+    )
     if cfg.temperature_input and cfg.single_temperature_input:
         result += 1
     return result
 
+
 def layers_per_player(cfg: BattleSnakeEncodingConfig) -> int:
-    result = cfg.include_snake_body + cfg.include_snake_head \
-                       + cfg.include_snake_tail + cfg.include_snake_health \
-                       + cfg.include_snake_length + cfg.include_area_control + cfg.include_food_distance \
-                       + cfg.include_tail_distance + cfg.include_snake_body_as_one_hot
+    result = (
+        cfg.include_snake_body
+        + cfg.include_snake_head
+        + cfg.include_snake_tail
+        + cfg.include_snake_health
+        + cfg.include_snake_length
+        + cfg.include_area_control
+        + cfg.include_food_distance
+        + cfg.include_tail_distance
+        + cfg.include_snake_body_as_one_hot
+    )
     return result
+
 
 def layers_per_enemy(cfg: BattleSnakeEncodingConfig) -> int:
     result = layers_per_player(cfg)
@@ -145,6 +161,7 @@ class SimpleConstrictorEncodingConfig(BattleSnakeEncodingConfig):
     include_tail_distance: bool = field(default=False)
     include_num_food_on_board: bool = field(default=False)
     fixed_food_spawn_chance: float = field(default=-1)
+
 
 @dataclass
 class BestConstrictorEncodingConfig(BattleSnakeEncodingConfig):

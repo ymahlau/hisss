@@ -11,9 +11,13 @@ from hisss.equilibria.nash import calculate_nash_equilibrium
 class TestNashSolverCPP(unittest.TestCase):
     def test_simple(self):
         available_actions = [[0, 1], [0, 1]]
-        joint_action_list = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        joint_action_values = np.asarray([[1, -1], [-1, 1], [-1, 1], [1, -1]], dtype=np.float32)
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values)
+        joint_action_list: list[tuple[int, ...]] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        joint_action_values = np.asarray(
+            [[1, -1], [-1, 1], [-1, 1], [1, -1]], dtype=np.float32
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values
+        )
         print(values)
         print(action_probs)
         self.assertAlmostEqual(0, values[0], places=3)
@@ -24,10 +28,13 @@ class TestNashSolverCPP(unittest.TestCase):
 
     def test_simple_general_interface(self):
         available_actions = [[3, 2], [5, 1]]
-        joint_action_list = [(2, 1), (3, 5), (3, 1), (2, 5)]
-        joint_action_values = np.asarray([[1, -1], [1, -1], [-1, 1], [-1, 1]], dtype=float)
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values,
-                                                          use_cpp=True)
+        joint_action_list: list[tuple[int, ...]] = [(2, 1), (3, 5), (3, 1), (2, 5)]
+        joint_action_values = np.asarray(
+            [[1, -1], [1, -1], [-1, 1], [-1, 1]], dtype=float
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values, use_cpp=True
+        )
         print(values)
         print(action_probs)
         self.assertAlmostEqual(0, values[0], places=3)
@@ -38,56 +45,91 @@ class TestNashSolverCPP(unittest.TestCase):
 
     def test_asymmetric(self):
         """
-          EE  1  P1:  (1)  0.800000  0.200000  0.000000  EP=  3.0  P2:  (1)  0.666667  0.333333  EP=                 2.8
-          EE  2  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (2)  0.333333  0.666667  EP=  2.6666666666666665
-          EE  3  P1:  (3)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (3)  1.000000  0.000000  EP=                 3.0
+        EE  1  P1:  (1)  0.800000  0.200000  0.000000  EP=  3.0  P2:  (1)  0.666667  0.333333  EP=                 2.8
+        EE  2  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (2)  0.333333  0.666667  EP=  2.6666666666666665
+        EE  3  P1:  (3)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (3)  1.000000  0.000000  EP=                 3.0
         """
         available_actions = [[0, 1, 2], [0, 1]]
-        joint_action_list = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
-        joint_action_values = np.asarray([[3, 3], [3, 2], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float)
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values,
-                                                          use_cpp=True)
+        joint_action_list: list[tuple[int, ...]] = [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (2, 0),
+            (2, 1),
+        ]
+        joint_action_values = np.asarray(
+            [[3, 3], [3, 2], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values, use_cpp=True
+        )
         print(values)
         print(action_probs)
 
     def test_degenerate(self):
         """
-          EE  1  P1:  (1)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (1)  1.000000  0.000000  EP=                 3.0
-          EE  2  P1:  (1)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (2)  0.666667  0.333333  EP=                 3.0
-          EE  3  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (3)  0.333333  0.666667  EP=  2.6666666666666665
+        EE  1  P1:  (1)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (1)  1.000000  0.000000  EP=                 3.0
+        EE  2  P1:  (1)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (2)  0.666667  0.333333  EP=                 3.0
+        EE  3  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (3)  0.333333  0.666667  EP=  2.6666666666666665
         """
         available_actions = [[0, 1, 2], [0, 1]]
-        joint_action_list = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
-        joint_action_values = np.asarray([[3, 3], [3, 3], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float)
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values,
-                                                          use_cpp=False)
+        joint_action_list: list[tuple[int, ...]] = [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (2, 0),
+            (2, 1),
+        ]
+        joint_action_values = np.asarray(
+            [[3, 3], [3, 3], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values, use_cpp=False
+        )
         print(values)
         print(action_probs)
 
     def test_floating_point(self):
         """
-          Divide values by 10 !
-          EE  1  P1:  (1)  0.800000  0.200000  0.000000  EP=  3.0  P2:  (1)  0.666667  0.333333  EP=                 2.8
-          EE  2  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (2)  0.333333  0.666667  EP=  2.6666666666666665
-          EE  3  P1:  (3)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (3)  1.000000  0.000000  EP=                 3.0
+        Divide values by 10 !
+        EE  1  P1:  (1)  0.800000  0.200000  0.000000  EP=  3.0  P2:  (1)  0.666667  0.333333  EP=                 2.8
+        EE  2  P1:  (2)  0.000000  0.333333  0.666667  EP=  4.0  P2:  (2)  0.333333  0.666667  EP=  2.6666666666666665
+        EE  3  P1:  (3)  1.000000  0.000000  0.000000  EP=  3.0  P2:  (3)  1.000000  0.000000  EP=                 3.0
         """
         available_actions = [[0, 1, 2], [0, 1]]
-        joint_action_list = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
-        joint_action_values = np.asarray([[3, 3], [3, 2], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float) / 10.0
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values,
-                                                          use_cpp=False)
+        joint_action_list: list[tuple[int, ...]] = [
+            (0, 0),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (2, 0),
+            (2, 1),
+        ]
+        joint_action_values = (
+            np.asarray([[3, 3], [3, 2], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float)
+            / 10.0
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values, use_cpp=False
+        )
         print(values)
         print(action_probs)
 
     def test_temp(self):
         """
-          EE  1  P1:  (1)  1.000000  0.000000  EP=  1.0  P2:  (1)  1.000000  0.000000  EP=  1.0
-          EE  2  P1:  (2)  0.000000  1.000000  EP=  5.0  P2:  (2)  0.000000  1.000000  EP=  5.0
+        EE  1  P1:  (1)  1.000000  0.000000  EP=  1.0  P2:  (1)  1.000000  0.000000  EP=  1.0
+        EE  2  P1:  (2)  0.000000  1.000000  EP=  5.0  P2:  (2)  0.000000  1.000000  EP=  5.0
         """
         available_actions = [[0, 1], [0, 1]]
-        joint_action_list = [(0, 0), (0, 1), (1, 0), (1, 1)]
-        joint_action_values = np.asarray([[1, 1], [1, 1], [1, 1], [5, 5]], dtype=np.float32)
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values)
+        joint_action_list: list[tuple[int, ...]] = [(0, 0), (0, 1), (1, 0), (1, 1)]
+        joint_action_values = np.asarray(
+            [[1, 1], [1, 1], [1, 1], [5, 5]], dtype=np.float32
+        )
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values
+        )
         print(values)
         print(action_probs)
 
@@ -97,14 +139,16 @@ class TestNashSolverCPP(unittest.TestCase):
         joint_action_list = list(itertools.product(*available_actions))
         joint_action_values = np.random.rand(len(joint_action_list), 2)
         start = time.time()
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values)
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_values
+        )
         print(time.time() - start)
         print(values)
         print(action_probs)
 
     def test_3_player(self):
         available_actions = [[0, 1], [0, 1], [0, 1]]
-        joint_actions = [
+        joint_actions: list[tuple[int, ...]] = [
             (0, 0, 0),
             (0, 0, 1),
             (0, 1, 0),
@@ -114,18 +158,23 @@ class TestNashSolverCPP(unittest.TestCase):
             (1, 1, 0),
             (1, 1, 1),
         ]
-        joint_action_values = np.asarray([
-            [7, 7, 7],
-            [7, 7, 6],
-            [1, 1, 2.3],
-            [1, 2, 0],
-            [6, 0, 0],
-            [8, 5, 3],
-            [6, 6.5, 1],
-            [6, 5.5, 5],
-        ], dtype=np.float32)
+        joint_action_values = np.asarray(
+            [
+                [7, 7, 7],
+                [7, 7, 6],
+                [1, 1, 2.3],
+                [1, 2, 0],
+                [6, 0, 0],
+                [8, 5, 3],
+                [6, 6.5, 1],
+                [6, 5.5, 5],
+            ],
+            dtype=np.float32,
+        )
         start = time.time()
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_actions, joint_action_values)
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_actions, joint_action_values
+        )
         print(time.time() - start)
         print(values)
         print(action_probs)
@@ -133,7 +182,7 @@ class TestNashSolverCPP(unittest.TestCase):
     def test_book_example(self):
         # https://link.springer.com/content/pdf/10.1007/978-93-86279-17-0_5.pdf
         available_actions = [[0, 1], [0, 1], [0, 1]]
-        joint_actions = [
+        joint_actions: list[tuple[int, ...]] = [
             (0, 0, 0),
             (0, 0, 1),
             (0, 1, 0),
@@ -143,18 +192,23 @@ class TestNashSolverCPP(unittest.TestCase):
             (1, 1, 0),
             (1, 1, 1),
         ]
-        joint_action_values = np.asarray([
-            [0, 0, 0],
-            [0, 0, 2],
-            [0, 2, 0],
-            [1, 0, 0],
-            [2, 0, 0],
-            [0, 1, 0],
-            [0, 0, 1],
-            [0, 0, 0],
-        ], dtype=np.float32)
+        joint_action_values = np.asarray(
+            [
+                [0, 0, 0],
+                [0, 0, 2],
+                [0, 2, 0],
+                [1, 0, 0],
+                [2, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1],
+                [0, 0, 0],
+            ],
+            dtype=np.float32,
+        )
         start = time.time()
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_actions, joint_action_values)
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_actions, joint_action_values
+        )
         print(time.time() - start)
         print(values)
         print(action_probs)
@@ -164,14 +218,21 @@ class TestNashSolverCPP(unittest.TestCase):
         num_actions = 3
         max_action_idx = 10
         num_iter = 100
-        available_actions = [random.choices(list(range(max_action_idx)), k=num_actions) for _ in range(num_player)]
-        joint_action_list = list(itertools.product(*available_actions))
+        available_actions = [
+            random.choices(list(range(max_action_idx)), k=num_actions)
+            for _ in range(num_player)
+        ]
+        joint_action_list: list[tuple[int, ...]] = list(
+            itertools.product(*available_actions)
+        )
         time_sum = 0
         values, action_probs = None, None
         for _ in range(num_iter):
             joint_action_values = np.random.rand(len(joint_action_list), num_player)
             start = time.time()
-            values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_values)
+            values, action_probs = calculate_nash_equilibrium(
+                available_actions, joint_action_list, joint_action_values
+            )
             time_sum += time.time() - start
         print(time_sum / num_iter)
         print(values)
@@ -180,7 +241,7 @@ class TestNashSolverCPP(unittest.TestCase):
     def test_cooperative_multiplayer(self):
         # https://link.springer.com/content/pdf/10.1007/978-93-86279-17-0_5.pdf
         available_actions = [[0, 1], [0, 1], [0, 1]]
-        joint_actions = [
+        joint_actions: list[tuple[int, ...]] = [
             (0, 0, 0),
             (0, 0, 1),
             (0, 1, 0),
@@ -190,38 +251,112 @@ class TestNashSolverCPP(unittest.TestCase):
             (1, 1, 0),
             (1, 1, 1),
         ]
-        joint_action_values = np.asarray([
-            [0, 0, 0],
-            [0, 0, 1],
-            [0, 1, 0],
-            [0, 2, 2],
-            [1, 0, 0],
-            [2, 0, 2],
-            [2, 2, 0],
-            [3, 3, 3],
-        ], dtype=np.float32)
+        joint_action_values = np.asarray(
+            [
+                [0, 0, 0],
+                [0, 0, 1],
+                [0, 1, 0],
+                [0, 2, 2],
+                [1, 0, 0],
+                [2, 0, 2],
+                [2, 2, 0],
+                [3, 3, 3],
+            ],
+            dtype=np.float32,
+        )
         start = time.time()
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_actions, joint_action_values)
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_actions, joint_action_values
+        )
         print(time.time() - start)
         print(values)
         print(action_probs)
-        
+
     def test_special_error(self):
         available_actions = [[7, 7, 5], [8, 9, 1], [1, 1, 1], [9, 9, 6]]
-        joint_action_list = [(7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6), (7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6),
-                             (7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6), (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6),
-                             (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6), (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6),
-                             (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6), (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6),
-                             (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6), (7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6),
-                             (7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6), (7, 8, 1, 9), (7, 8, 1, 9), (7, 8, 1, 6),
-                             (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6), (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6),
-                             (7, 9, 1, 9), (7, 9, 1, 9), (7, 9, 1, 6), (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6),
-                             (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6), (7, 1, 1, 9), (7, 1, 1, 9), (7, 1, 1, 6),
-                             (5, 8, 1, 9), (5, 8, 1, 9), (5, 8, 1, 6), (5, 8, 1, 9), (5, 8, 1, 9), (5, 8, 1, 6),
-                             (5, 8, 1, 9), (5, 8, 1, 9), (5, 8, 1, 6), (5, 9, 1, 9), (5, 9, 1, 9), (5, 9, 1, 6),
-                             (5, 9, 1, 9), (5, 9, 1, 9), (5, 9, 1, 6), (5, 9, 1, 9), (5, 9, 1, 9), (5, 9, 1, 6),
-                             (5, 1, 1, 9), (5, 1, 1, 9), (5, 1, 1, 6), (5, 1, 1, 9), (5, 1, 1, 9), (5, 1, 1, 6),
-                             (5, 1, 1, 9), (5, 1, 1, 9), (5, 1, 1, 6)]
+        joint_action_list: list[tuple[int, ...]] = [
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 8, 1, 9),
+            (7, 8, 1, 9),
+            (7, 8, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 9, 1, 9),
+            (7, 9, 1, 9),
+            (7, 9, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (7, 1, 1, 9),
+            (7, 1, 1, 9),
+            (7, 1, 1, 6),
+            (5, 8, 1, 9),
+            (5, 8, 1, 9),
+            (5, 8, 1, 6),
+            (5, 8, 1, 9),
+            (5, 8, 1, 9),
+            (5, 8, 1, 6),
+            (5, 8, 1, 9),
+            (5, 8, 1, 9),
+            (5, 8, 1, 6),
+            (5, 9, 1, 9),
+            (5, 9, 1, 9),
+            (5, 9, 1, 6),
+            (5, 9, 1, 9),
+            (5, 9, 1, 9),
+            (5, 9, 1, 6),
+            (5, 9, 1, 9),
+            (5, 9, 1, 9),
+            (5, 9, 1, 6),
+            (5, 1, 1, 9),
+            (5, 1, 1, 9),
+            (5, 1, 1, 6),
+            (5, 1, 1, 9),
+            (5, 1, 1, 9),
+            (5, 1, 1, 6),
+            (5, 1, 1, 9),
+            (5, 1, 1, 9),
+            (5, 1, 1, 6),
+        ]
         joint_action_value_arr = np.asarray(
             [
                 [0.39553605, 0.26308985, 0.96972347, 0.63437033],
@@ -304,13 +439,14 @@ class TestNashSolverCPP(unittest.TestCase):
                 [0.6277213, 0.49668262, 0.3449152, 0.71553869],
                 [0.35677325, 0.67039844, 0.96629777, 0.47731114],
                 [0.98973166, 0.35805004, 0.84892369, 0.42605258],
-                [0.20247228, 0.20981338, 0.63591637, 0.67194483]
+                [0.20247228, 0.20981338, 0.63591637, 0.67194483],
             ],
-            dtype=np.float32
+            dtype=np.float32,
         )
         start = time.time()
-        values, action_probs = calculate_nash_equilibrium(available_actions, joint_action_list, joint_action_value_arr)
+        values, action_probs = calculate_nash_equilibrium(
+            available_actions, joint_action_list, joint_action_value_arr
+        )
         print(time.time() - start)
         print(values)
         print(action_probs)
-

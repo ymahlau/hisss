@@ -11,6 +11,9 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write  
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +25,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up QEMU (Linux aarch64)
         if: runner.os == 'Linux'
@@ -49,8 +54,13 @@ jobs:
   build_sdist:
     name: Build sdist
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write  
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+            persist-credentials: false
       - run: pipx run build --sdist
       - uses: actions/upload-artifact@v4
         with:

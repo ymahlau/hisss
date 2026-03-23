@@ -6,14 +6,16 @@ import numpy as np
 
 
 class BattleSnakeRewardType(Enum):
-    STANDARD = 'STANDARD'
-    KILL = 'KILL'
-    COOP = 'COOP'
+    STANDARD = "STANDARD"
+    KILL = "KILL"
+    COOP = "COOP"
+
 
 @dataclass
 class BattleSnakeRewardConfig:
     living_reward: float = 0.0
     terminal_reward: float = 1.0
+
 
 class BattleSnakeRewardFunction(ABC):
     def __init__(self, cfg: BattleSnakeRewardConfig):
@@ -21,11 +23,11 @@ class BattleSnakeRewardFunction(ABC):
 
     @abstractmethod
     def __call__(
-            self,
-            is_terminal: bool,
-            num_players: int,
-            players_at_turn: list[int],
-            players_at_turn_last: list[int],
+        self,
+        is_terminal: bool,
+        num_players: int,
+        players_at_turn: list[int],
+        players_at_turn_last: list[int],
     ) -> np.ndarray:
         raise NotImplementedError()
 
@@ -34,17 +36,18 @@ class BattleSnakeRewardFunction(ABC):
 class StandardBattleSnakeRewardConfig(BattleSnakeRewardConfig):
     pass
 
+
 class BattleSnakeRewardFunctionStandard(BattleSnakeRewardFunction):
     def __init__(self, cfg: StandardBattleSnakeRewardConfig):
         super().__init__(cfg)
         self.cfg = cfg
 
     def __call__(
-            self,
-            is_terminal: bool,
-            num_players: int,
-            players_at_turn: list[int],
-            players_at_turn_last: list[int]
+        self,
+        is_terminal: bool,
+        num_players: int,
+        players_at_turn: list[int],
+        players_at_turn_last: list[int],
     ) -> np.ndarray:
         rewards = np.zeros(shape=(num_players,), dtype=float)
         num_at_turn = len(players_at_turn)
@@ -60,7 +63,9 @@ class BattleSnakeRewardFunctionStandard(BattleSnakeRewardFunction):
             rewards[players_at_turn[0]] = self.cfg.terminal_reward
             return rewards
         # if game has not ended, all player alive get the living reward
-        for player in players_at_turn:  # all players still alive get a positive living reward
+        for (
+            player
+        ) in players_at_turn:  # all players still alive get a positive living reward
             rewards[player] = self.cfg.living_reward
         return rewards
 
@@ -68,6 +73,7 @@ class BattleSnakeRewardFunctionStandard(BattleSnakeRewardFunction):
 @dataclass
 class KillBattleSnakeRewardConfig(BattleSnakeRewardConfig):
     pass
+
 
 class BattleSnakeRewardFunctionKill(BattleSnakeRewardFunction):
     """
@@ -77,20 +83,23 @@ class BattleSnakeRewardFunctionKill(BattleSnakeRewardFunction):
     if three players alive: monotone game around cum_reward of 1/3  (kill reward is 1/3)
     if four players alive: monotone game around starting point of zero
     """
+
     def __init__(self, cfg: KillBattleSnakeRewardConfig):
         super().__init__(cfg)
         self.cfg = cfg
         if self.cfg.living_reward != 0:
-            raise ValueError("Kill reward function does not work with living reward due to fixed maximum reward")
+            raise ValueError(
+                "Kill reward function does not work with living reward due to fixed maximum reward"
+            )
         if self.cfg.terminal_reward != 1:
-            raise ValueError(f"Need terminal reward on one for kill reward function")
+            raise ValueError("Need terminal reward on one for kill reward function")
 
     def __call__(
-            self,
-            is_terminal: bool,
-            num_players: int,
-            players_at_turn: list[int],
-            players_at_turn_last: list[int]
+        self,
+        is_terminal: bool,
+        num_players: int,
+        players_at_turn: list[int],
+        players_at_turn_last: list[int],
     ) -> np.ndarray:
         # rewards still need to be scaled between -1 and 1. Technically max reward is 3 if all enemies kill themselves
         # in the same move, but we clip this rare situation
@@ -140,17 +149,18 @@ class CooperationBattleSnakeRewardConfig(BattleSnakeRewardConfig):
     living_reward: float = field(default=0.02)
     terminal_reward: float = -0.25
 
+
 class BattleSnakeRewardFunctionCooperation(BattleSnakeRewardFunction):
     def __init__(self, cfg: CooperationBattleSnakeRewardConfig):
         super().__init__(cfg)
         self.cfg = cfg
 
     def __call__(
-            self,
-            is_terminal: bool,
-            num_players: int,
-            players_at_turn: list[int],
-            players_at_turn_last: list[int]
+        self,
+        is_terminal: bool,
+        num_players: int,
+        players_at_turn: list[int],
+        players_at_turn_last: list[int],
     ) -> np.ndarray:
         num_at_turn = len(players_at_turn)
         num_at_turn_last = len(players_at_turn_last)
@@ -166,7 +176,9 @@ class BattleSnakeRewardFunctionCooperation(BattleSnakeRewardFunction):
         return rewards
 
 
-def get_battlesnake_reward_func_from_cfg(cfg: BattleSnakeRewardConfig) -> BattleSnakeRewardFunction:
+def get_battlesnake_reward_func_from_cfg(
+    cfg: BattleSnakeRewardConfig,
+) -> BattleSnakeRewardFunction:
     if isinstance(cfg, StandardBattleSnakeRewardConfig):
         return BattleSnakeRewardFunctionStandard(cfg)
     elif isinstance(cfg, KillBattleSnakeRewardConfig):

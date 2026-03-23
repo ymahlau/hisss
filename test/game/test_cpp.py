@@ -9,7 +9,6 @@ from test.bootcamp.test_envs_3x3 import perform_choke_2_player
 
 
 class TestStep(unittest.TestCase):
-
     def test_wall_kills(self):
         snake_spawns = {0: [[0, 1]], 1: [[1, 0]], 2: [[1, 2]], 3: [[2, 1]]}
         food_pos = [[1, 1]]
@@ -137,7 +136,7 @@ class TestStep(unittest.TestCase):
             w=101,
             h=1,
             init_snake_len=[3],
-            all_actions_legal=True
+            all_actions_legal=True,
         )
         env = BattleSnakeGame(cfg=gc)
         actions = (RIGHT,)
@@ -447,7 +446,7 @@ class TestStep(unittest.TestCase):
             arr = ct.create_string_buffer(env.cfg.w * env.cfg.h * 3)
             CPP_LIB.lib.str_cpp(env.state_p, arr)
             str_repr = arr.value.decode("utf-8")
-            num_food += str_repr.count('@')
+            num_food += str_repr.count("@")
             env.close()
         ratio = (num_food * 100) / (num_episodes * num_steps)
         self.assertAlmostEqual(ratio, spawn_prob, delta=2.5)
@@ -530,13 +529,13 @@ class TestStep(unittest.TestCase):
             init_snake_pos=snake_spawns,
             init_snake_len=[3, 3, 3, 3],
             init_food_pos=food_pos,
-            all_actions_legal=True
+            all_actions_legal=True,
         )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         for i in range(4):
             self.assertEqual(len(env.available_actions(i)), 4)
-        self.assertEqual(len(env.available_joint_actions()), 4 ** 4)
+        self.assertEqual(len(env.available_joint_actions()), 4**4)
         env.close()
 
     def test_state_info(self):
@@ -568,8 +567,15 @@ class TestStep(unittest.TestCase):
     def test_reset_copy_equals(self):
         snake_spawns = {0: [[1, 2], [1, 1]], 1: [[0, 0]]}
         init_food = [[3, 3]]
-        gc = BattleSnakeConfig(w=11, h=11, num_players=2, init_snake_pos=snake_spawns, init_food_pos=init_food,
-                               init_turns_played=3, init_snake_len=[3, 3], )
+        gc = BattleSnakeConfig(
+            w=11,
+            h=11,
+            num_players=2,
+            init_snake_pos=snake_spawns,
+            init_food_pos=init_food,
+            init_turns_played=3,
+            init_snake_len=[3, 3],
+        )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         cpy = env.get_copy()
@@ -585,7 +591,14 @@ class TestStep(unittest.TestCase):
         cpy.close()
 
     def test_init_food_spawning(self):
-        gc = BattleSnakeConfig(w=11, h=11, num_players=4, init_food_pos=[], min_food=0, food_spawn_chance=100)
+        gc = BattleSnakeConfig(
+            w=11,
+            h=11,
+            num_players=4,
+            init_food_pos=[],
+            min_food=0,
+            food_spawn_chance=100,
+        )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         self.assertEqual(0, env.num_food())
@@ -597,9 +610,18 @@ class TestStep(unittest.TestCase):
     def test_max_health(self):
         snake_spawns = {0: [[0, 0]], 1: [[1, 0]]}
         init_food = [[0, 1]]
-        gc = BattleSnakeConfig(w=11, h=11, num_players=2, init_snake_pos=snake_spawns, init_food_pos=init_food,
-                               init_snake_health=[50, 50], max_snake_health=[200, 200], min_food=0, food_spawn_chance=0,
-                               init_snake_len=[3, 3], )
+        gc = BattleSnakeConfig(
+            w=11,
+            h=11,
+            num_players=2,
+            init_snake_pos=snake_spawns,
+            init_food_pos=init_food,
+            init_snake_health=[50, 50],
+            max_snake_health=[200, 200],
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3, 3],
+        )
         env = BattleSnakeGame(cfg=gc)
         env.render()
         self.assertEqual(50, env.player_healths()[0])
@@ -643,9 +665,17 @@ class TestStep(unittest.TestCase):
     def test_up_and_down(self):
         init_snake_pos = {0: [[1, 0]]}
         init_food_pos = []
-        game_conf = BattleSnakeConfig(w=7, h=7, num_players=1, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=[3], all_actions_legal=True)
+        game_conf = BattleSnakeConfig(
+            w=7,
+            h=7,
+            num_players=1,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3],
+            all_actions_legal=True,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
 
@@ -661,9 +691,16 @@ class TestStep(unittest.TestCase):
     def test_legal_action_after_food_consumption(self):
         init_snake_pos = {0: [[3, 0], [2, 0], [1, 0]], 1: [[0, 0], [0, 1], [0, 2]]}
         init_food_pos = [[4, 0]]
-        game_conf = BattleSnakeConfig(w=7, h=7, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=[3, 3])
+        game_conf = BattleSnakeConfig(
+            w=7,
+            h=7,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3, 3],
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
 
@@ -678,9 +715,17 @@ class TestStep(unittest.TestCase):
     def test_special_situation(self):
         init_snake_pos = {0: [[5, 9], [5, 9], [5, 9]], 1: [[0, 0], [0, 0], [0, 0]]}
         init_food_pos = []
-        game_conf = BattleSnakeConfig(w=11, h=11, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=[3, 3], all_actions_legal=True)
+        game_conf = BattleSnakeConfig(
+            w=11,
+            h=11,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3, 3],
+            all_actions_legal=True,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         self.assertEqual(2, game.num_players_alive())
@@ -696,15 +741,27 @@ class TestStep(unittest.TestCase):
     def test_area_control_simple(self):
         init_snake_pos = {0: [[0, 0]], 1: [[2, 2]]}
         init_food_pos = [[0, 1], [1, 1]]
-        game_conf = BattleSnakeConfig(w=3, h=3, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=[3, 3], )
+        game_conf = BattleSnakeConfig(
+            w=3,
+            h=3,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3, 3],
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         start_time = time.time()
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, fd, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(f"{time.time() - start_time=}")
         self.assertEqual(2, len(ac))
         self.assertEqual(2, ac[0])
@@ -716,35 +773,62 @@ class TestStep(unittest.TestCase):
     def test_are_control_complicated(self):
         init_snake_pos = {0: [[2, 2], [2, 1], [2, 0]], 1: [[3, 3], [3, 2], [3, 1]]}
         init_food_pos = [[2, 3]]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=[3, 3], )
+        game_conf = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=[3, 3],
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         print(game.player_pos(0))
         print(game.player_pos(1))
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, fd, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(ac)
         print(fd)
         self.assertEqual(10, fd[0])
         game.close()
 
     def test_are_control_different_len(self):
-        init_snake_pos = {0: [[2, 2], [2, 1], [2, 0], [1, 0]], 1: [[3, 3], [3, 2], [3, 1]]}
+        init_snake_pos = {
+            0: [[2, 2], [2, 1], [2, 0], [1, 0]],
+            1: [[3, 3], [3, 2], [3, 1]],
+        }
         init_food_pos = [[0, 2], [4, 3]]
         init_snake_len = [4, 3]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len)
+        game_conf = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         print(game.player_pos(0))
         print(game.player_pos(1))
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, fd, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(ac)
         print(fd)
         self.assertEqual(2, fd[0])
@@ -758,8 +842,13 @@ class TestStep(unittest.TestCase):
         ac = None
         for _ in range(50000):
             r = game.area_control()
-            ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-                r["food_reachable"]
+            ac, _fd, _td, _rt, _rf = (
+                r["area_control"],
+                r["food_distance"],
+                r["tail_distance"],
+                r["tail_reachable"],
+                r["food_reachable"],
+            )
         game.render()
         print(ac)
         print(f"{time.time() - start_time}")
@@ -769,31 +858,58 @@ class TestStep(unittest.TestCase):
         init_snake_pos = {0: [[0, 1], [0, 0], [1, 0]], 1: [[4, 2], [4, 3], [4, 4]]}
         init_food_pos = []
         init_snake_len = [3, 3]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len)
+        game_conf = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         r = game.area_control()
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        _ac, _fd, td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         self.assertEqual(2, td[0])
         self.assertEqual(4, td[1])
 
     def test_are_control_different_len_weights(self):
-        init_snake_pos = {0: [[2, 2], [2, 1], [2, 0], [1, 0]], 1: [[3, 3], [3, 2], [3, 1]]}
+        init_snake_pos = {
+            0: [[2, 2], [2, 1], [2, 0], [1, 0]],
+            1: [[3, 3], [3, 2], [3, 1]],
+        }
         init_food_pos = [[0, 2], [4, 3]]
         init_snake_len = [4, 3]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=2, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len)
+        game_conf = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=2,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         print(game.player_pos(0))
         print(game.player_pos(1))
         r = game.area_control(food_weight=2.0, weight=0.0)
-        ac, fd, td, rt, rf = r["area_control"], r["food_distance"], r["tail_distance"], r["tail_reachable"], \
-            r["food_reachable"]
+        ac, fd, _td, _rt, _rf = (
+            r["area_control"],
+            r["food_distance"],
+            r["tail_distance"],
+            r["tail_reachable"],
+            r["food_reachable"],
+        )
         print(ac)
         print(fd)
         self.assertEqual(2, ac[0])
@@ -819,7 +935,9 @@ class TestStep(unittest.TestCase):
 
     def test_init_players_dead(self):
         init_players_alive = [True, False]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=2, init_snakes_alive=init_players_alive)
+        game_conf = BattleSnakeConfig(
+            w=5, h=5, num_players=2, init_snakes_alive=init_players_alive
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         self.assertEqual(1, game.num_players_alive())
@@ -828,13 +946,25 @@ class TestStep(unittest.TestCase):
         self.assertTrue(game.is_terminal())
 
     def test_init_players_dead_in_game(self):
-        init_snake_pos = {0: [[2, 2], [2, 1], [2, 0], [1, 0]], 1: [[3, 3], [3, 2], [3, 1]], 2: [[3, 3], [3, 2]]}
+        init_snake_pos = {
+            0: [[2, 2], [2, 1], [2, 0], [1, 0]],
+            1: [[3, 3], [3, 2], [3, 1]],
+            2: [[3, 3], [3, 2]],
+        }
         init_food_pos = [[0, 2], [4, 3]]
         init_snake_len = [4, 3, 10]
         init_players_alive = [True, False, True]
-        game_conf = BattleSnakeConfig(w=5, h=5, num_players=3, init_food_pos=init_food_pos,
-                                      init_snake_pos=init_snake_pos, init_snakes_alive=init_players_alive,
-                                      min_food=0, food_spawn_chance=0, init_snake_len=init_snake_len)
+        game_conf = BattleSnakeConfig(
+            w=5,
+            h=5,
+            num_players=3,
+            init_food_pos=init_food_pos,
+            init_snake_pos=init_snake_pos,
+            init_snakes_alive=init_players_alive,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_len=init_snake_len,
+        )
         game = BattleSnakeGame(game_conf)
         game.render()
         self.assertEqual(2, game.num_players_alive())

@@ -1,6 +1,7 @@
 from hisss.game.config import BattleSnakeConfig
 from hisss.game.encoding import SimpleBattleSnakeEncodingConfig
 
+
 # snake 1 should learn to take food and force a win
 def two_snakes_one_food(fully_connected: bool) -> BattleSnakeConfig:
     ec = SimpleBattleSnakeEncodingConfig()
@@ -106,7 +107,7 @@ def choose_safe_option1(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[0, 0],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=True
+        all_actions_legal=True,
     )
     gc.reward_cfg.living_reward = 1.0
     return gc
@@ -129,7 +130,7 @@ def choose_safe_option2(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[0, 0],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=True
+        all_actions_legal=True,
     )
     gc.reward_cfg.living_reward = 1.0
     return gc
@@ -155,7 +156,7 @@ def avoid_each_other(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[0, 0],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=False
+        all_actions_legal=False,
     )
     gc.reward_cfg.living_reward = 0.5
     return gc
@@ -178,7 +179,7 @@ def avoid_wall_and_self(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[3],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=True
+        all_actions_legal=True,
     )
     gc.reward_cfg.living_reward = 1.0
     return gc
@@ -201,7 +202,7 @@ def map_with_food_single(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[3],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=True
+        all_actions_legal=True,
     )
     gc.reward_cfg.living_reward = 1.0
     return gc
@@ -224,7 +225,7 @@ def avoid_wall(fully_connected: bool) -> BattleSnakeConfig:
         init_snake_len=[0],
         food_spawn_chance=0,
         ec=ec,
-        all_actions_legal=True
+        all_actions_legal=True,
     )
     gc.reward_cfg.living_reward = 1.0
     return gc
@@ -235,7 +236,10 @@ def perform_choke_wrapped(fully_connected: bool, centered: bool) -> BattleSnakeC
     ec.flatten = fully_connected
     ec.centered = centered
     ec.include_board = False
-    init_snake_pos = {0: [[0, 2], [0, 1], [0, 0], [2, 0], [2, 1], [2, 2]], 1: [[1, 1], [1, 2], [1, 0]]}
+    init_snake_pos = {
+        0: [[0, 2], [0, 1], [0, 0], [2, 0], [2, 1], [2, 2]],
+        1: [[1, 1], [1, 2], [1, 0]],
+    }
     init_shake_health = [6, 5]
     init_snake_len = [6, 3]
     gc = BattleSnakeConfig(
@@ -250,7 +254,7 @@ def perform_choke_wrapped(fully_connected: bool, centered: bool) -> BattleSnakeC
         food_spawn_chance=0,
         ec=ec,
         all_actions_legal=True,
-        wrapped=True
+        wrapped=True,
     )
     return gc
 
@@ -272,4 +276,3 @@ def die_on_a_hill():
         all_actions_legal=True,
     )
     return game_cfg
-
