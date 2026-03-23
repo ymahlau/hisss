@@ -7,11 +7,17 @@
 #include "../header/battlesnake_helper.h"
 #include "../header/nash.h"
 
+#if defined(_WIN32) || defined(_MSC_VER)
+    #define HISSS_EXPORT __declspec(dllexport)
+#else
+    #define HISSS_EXPORT __attribute__((visibility("default")))
+#endif
+
 //g++ -c -fPIC link.cpp -o link.o
 //g++ -shared -Wl,-soname,-liblink.so -o liblink.so link.o
 
 extern "C" {
-    GameState* init_cpp(
+    HISSS_EXPORT GameState* init_cpp(
         int w,
         int h,
         int num_snakes,
@@ -58,13 +64,13 @@ extern "C" {
             init_hazards
         );
     }
-    void step_cpp(GameState* state, int* actions){
+    HISSS_EXPORT void step_cpp(GameState* state, int* actions){
         step(state, actions);
     }
-    void str_cpp(GameState* state, char* arr){
+    HISSS_EXPORT void str_cpp(GameState* state, char* arr){
         draw_to_arr(state, arr);
     }
-    void custom_encode_cpp(
+    HISSS_EXPORT void custom_encode_cpp(
             GameState* state,
             float* arr,
             bool include_current_food,
@@ -120,43 +126,43 @@ extern "C" {
             );
     }
 
-    GameState* clone_cpp(GameState* state){
+    HISSS_EXPORT GameState* clone_cpp(GameState* state){
         return clone(state);
     }
-    void close_cpp(GameState* state){
+    HISSS_EXPORT void close_cpp(GameState* state){
         close(state);
     }
-    void actions_cpp(GameState* state, int snake_id, int* actions){
+    HISSS_EXPORT void actions_cpp(GameState* state, int snake_id, int* actions){
         legal_actions(state, snake_id, actions);
     }
-    bool equals_cpp(GameState* state1, GameState* state2){
+    HISSS_EXPORT bool equals_cpp(GameState* state1, GameState* state2){
         return equals(state1, state2);
     }
-    void alive_cpp(GameState* state, bool* arr){
+    HISSS_EXPORT void alive_cpp(GameState* state, bool* arr){
         alive(state, arr);
     }
-    void snake_length_cpp(GameState* state, int* arr){
+    HISSS_EXPORT void snake_length_cpp(GameState* state, int* arr){
         snake_length(state, arr);
     }
-    int snake_body_length_cpp(GameState* state, int player){
+    HISSS_EXPORT int snake_body_length_cpp(GameState* state, int player){
         return snake_body_length(state, player);
     }
-    void snake_pos_cpp(GameState* state, int player, int* arr){
+    HISSS_EXPORT void snake_pos_cpp(GameState* state, int player, int* arr){
         snake_pos(state, player, arr);
     }
-    void snake_health_cpp(GameState* state, int* arr){
+    HISSS_EXPORT void snake_health_cpp(GameState* state, int* arr){
         snake_health(state, arr);
     }
-    int num_food_cpp(GameState* state){
+    HISSS_EXPORT int num_food_cpp(GameState* state){
         return num_food(state);
     }
-    void food_pos_cpp(GameState* state, int* arr){
+    HISSS_EXPORT void food_pos_cpp(GameState* state, int* arr){
         food_pos(state, arr);
     }
-    int turns_played_cpp(GameState* state){
+    HISSS_EXPORT int turns_played_cpp(GameState* state){
         return turns_played(state);
     }
-    void area_control_cpp(
+    HISSS_EXPORT void area_control_cpp(
             GameState* state,
             float* area_arr,
             int* food_dist_arr,
@@ -181,11 +187,11 @@ extern "C" {
                 food_in_hazard_weight
         );
     }
-    void hazards_cpp(GameState* state, bool* arr){
+    HISSS_EXPORT void hazards_cpp(GameState* state, bool* arr){
         hazards(state, arr);
     }
 
-    int compute_nash_cpp(
+    HISSS_EXPORT int compute_nash_cpp(
             int num_player_at_turn,
             const int* num_available_actions,  //shape (num_player_at_turn,)
             const int* available_actions,  // shape (sum(num_available_actions))
@@ -218,12 +224,12 @@ extern "C" {
         }
     }
 
-    void set_seed(int seed) {
+    HISSS_EXPORT void set_seed(int seed) {
         set_seed_gym(seed);
         set_seed_utils(seed);
     }
 
-    void char_game_matrix_cpp(
+    HISSS_EXPORT void char_game_matrix_cpp(
             GameState* state,
             char* matrix
     ){
