@@ -1,4 +1,4 @@
-![title image](https://github.com/ymahlau/hiss/blob/main/docs/source/_static/hisss_cover.png?raw=true)
+![title image](https://github.com/ymahlau/hisss/blob/main/docs/source/_static/hisss_cover.png?raw=true)
 
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://hisss.readthedocs.io/en/latest/)
 [![PyPI version](https://img.shields.io/pypi/v/hisss)](https://pypi.org/project/hisss/)
