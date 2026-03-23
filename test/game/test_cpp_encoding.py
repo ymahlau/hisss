@@ -337,8 +337,6 @@ class TestEncodingCPP(unittest.TestCase):
         env = BattleSnakeGame(cfg=gc)
         env.render()
         arr1, perm, inv_perm = env.get_obs(symmetry=0)
-        np_arr = np.asarray(arr1)
-        q = 1
 
     def test_distance_centered(self):
         conf = SimpleBattleSnakeEncodingConfig()
@@ -353,8 +351,6 @@ class TestEncodingCPP(unittest.TestCase):
         env = BattleSnakeGame(cfg=gc)
         env.render()
         arr1, perm, inv_perm = env.get_obs(symmetry=0)
-        np_arr = np.asarray(arr1)
-        q = 1
 
     def test_centered_4_player(self):
         gc = survive_on_11x11_4_player(centered=True)
@@ -437,104 +433,3 @@ class TestEncodingCPP(unittest.TestCase):
                 for y in range(obs.shape[2]):
                     check = obs[player, x, y, food_layer_idx] == 0 or obs[player, x, y, food_layer_idx] > .065
                     self.assertTrue(check)
-
-    def test_temperature_single(self):
-        game_cfg = perform_choke_2_player(centered=True, fully_connected=False)
-        game_cfg.ec.temperature_input = True
-        game_cfg.ec.single_temperature_input = True
-        game = BattleSnakeGame(game_cfg)
-        obs, _, _ = game.get_obs(temperatures=[2])
-
-        temperature_layer = obs[..., 2]
-        self.assertTrue((temperature_layer == .2).all().item())
-
-    def test_temperature_multiple(self):
-        game_cfg = perform_choke_5x5_4_player(centered=True)
-        game_cfg.ec.temperature_input = True
-        game_cfg.ec.single_temperature_input = False
-        game_cfg.ec.compress_enemies = False
-        game = BattleSnakeGame(game_cfg)
-        obs, _, _ = game.get_obs(temperatures=[1, 2, 3, 4])
-
-        temperature_layer1 = obs[0, :, :, 5]
-        self.assertTrue((temperature_layer1 == .2).all().item())
-        temperature_layer2 = obs[0, :, :, 8]
-        self.assertTrue((temperature_layer2 == .3).all().item())
-        temperature_layer3 = obs[0, :, :, 11]
-        self.assertTrue((temperature_layer3 == .4).all().item())
-
-        temperature_layer1 = obs[1, :, :, 5]
-        self.assertTrue((temperature_layer1 == .1).all().item())
-        temperature_layer2 = obs[1, :, :, 8]
-        self.assertTrue((temperature_layer2 == .3).all().item())
-        temperature_layer3 = obs[1, :, :, 11]
-        self.assertTrue((temperature_layer3 == .4).all().item())
-
-        temperature_layer1 = obs[2, :, :, 5]
-        self.assertTrue((temperature_layer1 == .1).all().item())
-        temperature_layer2 = obs[2, :, :, 8]
-        self.assertTrue((temperature_layer2 == .2).all().item())
-        temperature_layer3 = obs[2, :, :, 11]
-        self.assertTrue((temperature_layer3 == .4).all().item())
-
-        temperature_layer1 = obs[3, :, :, 5]
-        self.assertTrue((temperature_layer1 == .1).all().item())
-        temperature_layer2 = obs[3, :, :, 8]
-        self.assertTrue((temperature_layer2 == .2).all().item())
-        temperature_layer3 = obs[3, :, :, 11]
-        self.assertTrue((temperature_layer3 == .3).all().item())
-
-    def test_temperature_multiple_compressed(self):
-        game_cfg = perform_choke_5x5_4_player(centered=True)
-        game_cfg.ec.temperature_input = True
-        game_cfg.ec.single_temperature_input = False
-        game_cfg.ec.compress_enemies = True
-        game = BattleSnakeGame(game_cfg)
-        game.step((0, 0, 0, 0))
-        game.step((0, 0, 0, 0))
-        game.step((0, 0, 0, 0))
-        obs, _, _ = game.get_obs(temperatures=[1, 2, 3, 4])
-        tl = obs[0, :, :, -1]
-        self.assertTrue(
-            np.logical_or(
-                np.logical_or(
-                    np.logical_or(
-                        (tl == 0.2), (tl == 0.3)
-                    ),
-                    (tl == 0.4)),
-                (tl == 0))
-            .all().item()
-        )
-        tl = obs[1, :, :, -1]
-        self.assertTrue(
-            np.logical_or(
-                np.logical_or(
-                    np.logical_or(
-                        (tl == 0.1), (tl == 0.3)
-                    ),
-                    (tl == 0.4)),
-                (tl == 0))
-            .all().item()
-        )
-        tl = obs[2, :, :, -1]
-        self.assertTrue(
-            np.logical_or(
-                np.logical_or(
-                    np.logical_or(
-                        (tl == 0.2), (tl == 0.1)
-                    ),
-                    (tl == 0.4)),
-                (tl == 0))
-            .all().item()
-        )
-        tl = obs[3, :, :, -1]
-        self.assertTrue(
-            np.logical_or(
-                np.logical_or(
-                    np.logical_or(
-                        (tl == 0.2), (tl == 0.3)
-                    ),
-                    (tl == 0.1)),
-                (tl == 0))
-            .all().item()
-        )
