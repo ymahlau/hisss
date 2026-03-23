@@ -3,3 +3,12 @@ uv.lock
 *.o
 *.so
 main*.py
+.ninja*
+*.json
+build.ninja
+cmake_install*
+CMakeCache.txt
+CMakeInit.txt
+CMakeFiles/
+.cmake
+.venv

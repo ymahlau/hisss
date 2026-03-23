@@ -1,32 +1,56 @@
-cmake_minimum_required(VERSION 3.23)
-project(BattleSnakeCpp)
+cmake_minimum_required(VERSION 3.15)
+project(hisss_link CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(SOURCE_FILES main.cpp)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(BattleSnakeCpp main.cpp
-        source/battlesnake.cpp
-        source/battlesnake_helper.cpp
-        source/nash.cpp
-        source/logit.cpp
-        source/utils.cpp
-        header/battlesnake.h
-        header/battlesnake_helper.h
-        header/nash.h
-        header/logit.h
-        header/utils.h
-        link.cpp
-        alglib/alglibinternal.cpp
-        alglib/alglibinternal.h
-        alglib/alglibmisc.cpp
-        alglib/alglibmisc.h
-        alglib/ap.cpp
-        alglib/ap.h
-        alglib/linalg.cpp
-        alglib/linalg.h
-        alglib/optimization.cpp
-        alglib/optimization.h
-        alglib/solvers.cpp
-        alglib/solvers.h
-        header/mle.h source/mle.cpp header/quantal.h source/quantal.cpp
-        source/logit.cpp header/overcooked.h source/overcooked.cpp)
+set(ALGLIB_SOURCES
+    alglib/ap.cpp
+    alglib/alglibinternal.cpp
+    alglib/alglibmisc.cpp
+    alglib/linalg.cpp
+    alglib/solvers.cpp
+    alglib/optimization.cpp
+)
+
+set(PROJECT_SOURCES
+    source/battlesnake.cpp
+    source/battlesnake_helper.cpp
+    source/utils.cpp
+    source/nash.cpp
+    source/link.cpp
+)
+
+add_library(link SHARED ${PROJECT_SOURCES} ${ALGLIB_SOURCES})
+
+target_include_directories(link PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/header
+    ${CMAKE_CURRENT_SOURCE_DIR}/alglib
+)
+
+set_target_properties(link PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# -O3 for GCC/Clang, /O2 for MSVC
+target_compile_options(link PRIVATE
+    $<$<BOOL:${MSVC}>:/O2>
+    $<$<NOT:$<BOOL:${MSVC}>>:-O3>
+)
+
+# Alglib: suppress warnings (mirrors hatch_build.py -w)
+foreach(src IN LISTS ALGLIB_SOURCES)
+    set_source_files_properties(${src} PROPERTIES
+        COMPILE_FLAGS "$<IF:$<BOOL:${MSVC}>,/w,-w>")
+endforeach()
+
+# Project sources: enable -Wall (mirrors hatch_build.py -Wall)
+foreach(src IN LISTS PROJECT_SOURCES)
+    set_source_files_properties(${src} PROPERTIES
+        COMPILE_FLAGS "$<IF:$<BOOL:${MSVC}>,/W3,-Wall>")
+endforeach()
+
+# Install to hisss/cpp/ so lib.py finds it at the expected path
+# LIBRARY = .so/.dylib on Linux/macOS; RUNTIME = .dll on Windows
+install(TARGETS link
+    LIBRARY DESTINATION hisss/cpp
+    RUNTIME DESTINATION hisss/cpp
+)

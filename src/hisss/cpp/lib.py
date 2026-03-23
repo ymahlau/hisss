@@ -1,10 +1,29 @@
 import ctypes as ct
+import sys
 from pathlib import Path
 from typing import Tuple, Optional
 
 import numpy as np
 
 file_path = Path(__file__)
+
+
+def _find_library() -> Path:
+    compiled_dir = file_path.parent
+    if sys.platform == 'win32':
+        candidates = [compiled_dir / 'link.dll']
+    elif sys.platform == 'darwin':
+        candidates = [compiled_dir / 'liblink.dylib', compiled_dir / 'liblink.so']
+    else:
+        candidates = [compiled_dir / 'liblink.so']
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(
+        f"Could not find compiled hisss library in {compiled_dir}. "
+        f"Searched: {[str(c) for c in candidates]}. "
+        f"Run 'pip install -e .' to recompile."
+    )
 
 
 class Struct(ct.Structure):
@@ -15,7 +34,7 @@ class CPPLibrary:
     def __init__(
             self,
     ):
-        self.lib = ct.cdll.LoadLibrary(str(file_path.parent / 'compiled' / 'liblink.so'))
+        self.lib = ct.cdll.LoadLibrary(str(_find_library()))
         self._init_functions()
 
     def _init_functions(self):

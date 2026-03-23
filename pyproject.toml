@@ -10,31 +10,41 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "hatchling>=1.28.0",
     "numpy>=2.3.5",
     "pytest>=9.0.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "black>=24.10.0",
+    "ipykernel>=6.29.5",
+    "pre-commit>=4.0.1",
+    "pymdown-extensions>=10.12",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.2",
+    "tox-uv>=1.16.1",
+    "pydoclint>=0.6.6",
+    "sphinx<9.0",
+    "sphinx-autobuild>=2025.8.25",
+    "sphinx-book-theme>=1.1.4",
+    "nbsphinx>=0.9",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "myst_nb>=1.3.0",
+    "sphinx-copybutton>=0.5.2",
+    "jupyterlab",
+    "ipywidgets",
+    "scikit-build-core",
+    "cmake",
+    "ninja",
+]
+
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["scikit-build-core>=0.9"]
+build-backend = "scikit_build_core.build"
 
-[tool.hatch.metadata]
-allow-direct-references = true
-
-# --- BUILD HOOK REGISTRATION ---
-[tool.hatch.build.hooks.custom]
-
-[tool.hatch.build.targets.sdist]
-include = [
-    "src/hisss",
-    "hatch_build.py" # Ensure the build hook script itself is included!
-]
-exclude = [
-    "src/hisss/cpp/compiled" # Clean slate for the user
-]
-
-# --- WHEEL SETTINGS ---
-[tool.hatch.build.targets.wheel]
-packages = ["src/hisss"]
-artifacts = ["src/hisss/cpp/compiled/liblink.so"]
+[tool.scikit-build]
+cmake.build-type = "Release"
+cmake.minimum-version = "3.15"
+wheel.packages = ["src/hisss"]
+editable.mode = "inplace"
