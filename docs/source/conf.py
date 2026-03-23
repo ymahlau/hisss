@@ -47,7 +47,7 @@ exclude_patterns = []
 html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 html_favicon = "_static/favicon.ico"
-html_logo = "_static/drinx_text.svg"
+html_logo = "_static/hisss_text.svg"
 
 html_theme_options = {
     "repository_url": "https://github.com/ymahlau/drinx",

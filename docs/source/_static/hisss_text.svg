@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8f4ff"/>
+      <stop offset="18%" stop-color="#b8deff"/>
+      <stop offset="35%" stop-color="#7ec8f8"/>
+      <stop offset="50%" stop-color="#4daee8"/>
+      <stop offset="62%" stop-color="#a0d4f0"/>
+      <stop offset="75%" stop-color="#dceef9"/>
+      <stop offset="88%" stop-color="#6ab8e8"/>
+      <stop offset="100%" stop-color="#3a8cc0"/>
+    </linearGradient>
+    <linearGradient id="chromeStroke" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#a8d8f0"/>
+      <stop offset="60%" stop-color="#5ba0d0"/>
+      <stop offset="100%" stop-color="#2a6a90"/>
+    </linearGradient>
+    <linearGradient id="subtitleGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8cc8e8"/>
+      <stop offset="50%" stop-color="#c0e0f0"/>
+      <stop offset="100%" stop-color="#8cc8e8"/>
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="outerGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#40a0d8" flood-opacity="0.35"/>
+      <feComposite in2="blur" operator="in" result="glowColor"/>
+      <feMerge>
+        <feMergeNode in="glowColor"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="subtitleGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feFlood flood-color="#60b0e0" flood-opacity="0.25"/>
+      <feComposite in2="blur" operator="in" result="glowColor"/>
+      <feMerge>
+        <feMergeNode in="glowColor"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- HISSS main title -->
+  <g filter="url(#outerGlow)">
+    <!-- Shadow/depth layer -->
+    <text x="450" y="128" text-anchor="middle"
+          font-family="'Impact', 'Arial Black', 'Helvetica Neue', sans-serif"
+          font-size="150" font-weight="900" font-style="italic"
+          letter-spacing="12"
+          fill="#1a3a55" opacity="0.5"
+          transform="translate(3, 3)">
+      HISSS
+    </text>
+    <!-- Stroke outline -->
+    <text x="450" y="128" text-anchor="middle"
+          font-family="'Impact', 'Arial Black', 'Helvetica Neue', sans-serif"
+          font-size="150" font-weight="900" font-style="italic"
+          letter-spacing="12"
+          fill="none" stroke="url(#chromeStroke)" stroke-width="3">
+      HISSS
+    </text>
+    <!-- Main fill -->
+    <text x="450" y="128" text-anchor="middle"
+          font-family="'Impact', 'Arial Black', 'Helvetica Neue', sans-serif"
+          font-size="150" font-weight="900" font-style="italic"
+          letter-spacing="12"
+          fill="url(#chrome)">
+      HISSS
+    </text>
+    <!-- Highlight layer -->
+    <text x="450" y="128" text-anchor="middle"
+          font-family="'Impact', 'Arial Black', 'Helvetica Neue', sans-serif"
+          font-size="150" font-weight="900" font-style="italic"
+          letter-spacing="12"
+          fill="rgba(255,255,255,0.12)">
+      HISSS
+    </text>
+  </g>
+
+  <!-- Subtitle -->
+  <g filter="url(#subtitleGlow)">
+    <text x="450" y="195" text-anchor="middle"
+          font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+          font-size="42" font-weight="300" font-style="italic"
+          letter-spacing="5"
+          fill="url(#subtitleGrad)">
+      High-Speed Snake Simulator
+    </text>
+  </g>
+</svg>

@@ -1,17 +1,23 @@
-![cover](/img/hisss_cover.png)
-# High-Speed Snake Simulator (HISSS)
+![title image](https://github.com/ymahlau/hiss/blob/main/docs/source/_static/hisss_cover.png?raw=true)
+
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://hisss.readthedocs.io/en/latest/)
+[![PyPI version](https://img.shields.io/pypi/v/hisss)](https://pypi.org/project/hisss/)
+[![codecov](https://codecov.io/gh/ymahlau/hisss/branch/main/graph/badge.svg)](https://codecov.io/gh/ymahlau/hisss)
+[![Continuous integration](https://github.com/ymahlau/hisss/actions/workflows/cicd.yml/badge.svg?branch=main)](https://github.com/ymahlau/hisss/actions/workflows/cicd.yml/badge.svg?branch=main)
+
+
+# Hisss: High-Speed Snake Simulator 🐍
 
 A very fast simulation environment for the game of [Battlesnake](https://play.battlesnake.com). The game logic is implemented in C++ and provides python wrappers for convenience. The main features include:
 - Fast C++ Implemtation with convenient python wrappers
 - Support of all game modes including Royale, Wrapped, Constrictor, Restricted
 - Generation of observation arrays for neural network training
+- Strategy utilities: Solver for Nash-equilibrium and Logit-equilibrium
 
 https://github.com/user-attachments/assets/68538aa0-9ddb-45e2-b0c7-8ac224ff4dd8
 
 ## Installation
-IMPORTANT: You need to have `g++` installed to use this library. The pip installation will compile the C++ source files for your system
-
-You can install this package via pip:
+You can install this package via pip, which will install pre-compiled binaries to be used within python:
 ```bash
 pip install hisss
 ```
@@ -20,15 +26,15 @@ If you want to do development, change something or contribute new features fork 
 ```bash
 pip install -e .
 ```
-The pip installation already compiles C++ files for you.
+The pip installation already compiles C++ files for you. You need to have `g++` installed to compile the development version.
 
 ## Basic Usage
 
 The repository contains python bindings for the c++ implementation. We follow the basic naming scheme of [Battlesnake](https://play.battlesnake.com) with:
 - duel: 1v1 with perfect information (full board visible)
 - stadard: 4 snake free for all with perfect information
-- restricted_duel: 1v1 with view radius
-- restricted_standard: 4 snake free for all with view radius
+- restricted_duel: 1v1 with restricted view radius
+- restricted_standard: 4 snake free for all with restricted view radius
 
 A very basic usage example of the BattleSnakeGame looks like this:
 ```python
@@ -77,8 +83,8 @@ obs, perm, inv_perm = env.get_obs(symmetry=1)  # specify the symmetry you want f
 You can get the transformed observation by specifying the symmetry as shown in the example above. You will always get the action permutation and inverse permutation as an additional output of the step function, since with a symmetry applied the policy needs to be carefully permutated as well to keep everything correct.
 
 # Limitations
-There are some limitation to the current implementation which may or may not be fixed in the future:
-- In the restricted mode, food is only visible in the observation within the view radius. Usually it should be visible outside the view radius in the spawn turn, but this does not happen currently, because our current implementation does not save the food spawn turn.
+There are some limitation to the current implementation:
+- When using the numpy observations in the restricted mode, food is only visible in the observation within the view radius. Usually it should be visible outside the view radius in the spawn turn, but this does not happen currently, because our current implementation does not save the food spawn turn. Since usually food spawning should be turned off during planning anyways, this should almost never be an issue.
 
 # References
 

@@ -12,3 +12,5 @@ CMakeInit.txt
 CMakeFiles/
 .cmake
 .venv
+docs/build
+docs/source/api
