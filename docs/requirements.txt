@@ -20,3 +20,4 @@ ipywidgets
 scikit-build-core
 cmake
 ninja
+numpy

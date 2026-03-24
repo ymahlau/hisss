@@ -28,6 +28,10 @@ pip install -e .
 ```
 The pip installation already compiles C++ files for you. You need to have `g++` installed to compile the development version.
 
+## Documentation
+
+You can find detailed tutorials and API explanations in our documentation [here](https://drinx.readthedocs.io/en/latest/). Additionally, we provide a quickstart below.
+
 ## Basic Usage
 
 The repository contains python bindings for the c++ implementation. We follow the basic naming scheme of [Battlesnake](https://play.battlesnake.com) with:
@@ -99,3 +103,11 @@ This snake simulator was mainly used in the development of [Albatross](https://g
   month = jul
 }
 ```
+
+
+## Other links
+
+Also check out my other repositories:
+* [**💡 fdtdx**](https://github.com/ymahlau/fdtdx) - Electromagnetic FDTD Simulations in JAX. ![Stars](https://img.shields.io/github/stars/ymahlau/fdtdx?style=social)
+* [**🔮 bonni**](https://github.com/ymahlau/fdtdx) - Bayesian Optimization via Neural Network surrogates and Interior Point Optimization ![Stars](https://img.shields.io/github/stars/ymahlau/bonni?style=social)
+* [**🥂 drinx**](https://github.com/ymahlau/drinx) - Dataclass Registry in JAX. ![Stars](https://img.shields.io/github/stars/ymahlau/drinx?style=social)

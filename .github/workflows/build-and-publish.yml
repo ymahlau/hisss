@@ -1,26 +1,21 @@
 name: Build and Publish
 
-# on:
-#   release:
-#     types: [published]
-#   workflow_dispatch:
 on:
-  push:
-    branches: [main]
+  release:
+    types: [published]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    permissions:
-      id-token: write  
-      contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
-        # os: [ubuntu-latest, macos-latest, windows-latest]
+        # os: [windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         # ubuntu-latest  → Linux x86_64 (+ aarch64 via QEMU)
         # windows-latest → Windows x86_64
         # macos-latest   → macOS arm64  (Apple Silicon runner)
@@ -57,9 +52,6 @@ jobs:
   build_sdist:
     name: Build sdist
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write  
-      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,30 +62,30 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
-  # pypi-publish:
-  #   name: Build and publish Python 🐍 distributions to PyPI
-  #   needs: [build_wheels, build_sdist] # Waits for builds to finish
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     id-token: write
-  #     contents: read
-  #   steps:
-  #     - name: Download all wheel artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         pattern: wheels-* # Grabs wheels-ubuntu-latest, wheels-macos-latest, etc.
-  #         path: dist/
-  #         merge-multiple: true
+  pypi-publish:
+    name: Build and publish Python 🐍 distributions to PyPI
+    needs: [build_wheels, build_sdist] # Waits for builds to finish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download all wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-* # Grabs wheels-ubuntu-latest, wheels-macos-latest, etc.
+          path: dist/
+          merge-multiple: true
 
-  #     - name: Download sdist artifact
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: sdist
-  #         path: dist/
+      - name: Download sdist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sdist
+          path: dist/
 
-  #     - name: Publish distribution 📦 to PyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         # We don't need a password/token input because we use 
-  #         # Trusted Publishing (id-token permission above).
-  #         print-hash: true
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # We don't need a password/token input because we use 
+          # Trusted Publishing (id-token permission above).
+          print-hash: true
