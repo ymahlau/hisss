@@ -3,28 +3,82 @@ from dataclasses import dataclass, field
 
 @dataclass(kw_only=True)
 class BattleSnakeEncodingConfig:
+    """
+    Configuration for encoding a BattleSnake game state into a NumPy tensor.
+
+    This dataclass defines which specific spatial layers and global features
+    should be included when translating the JSON-like game state into a numerical
+    tensor representation, typically used as an observation space for reinforcement
+    learning agents or neural networks.
+    """
+
+    #: bool: Includes a spatial layer representing the current locations of food on the board.
     include_current_food: bool
+
+    #: bool: Includes a layer for predicted or upcoming food spawns, if supported by the environment.
     include_next_food: bool
+
+    #: bool: Includes a base layer representing the playable board area (useful for identifying boundaries).
     include_board: bool
+
+    #: bool: Includes the current turn number of the game as a feature.
     include_number_of_turns: bool
-    compress_enemies: bool  # enemies share their encoding layers
+
+    #: bool: If True, all enemy snakes share the same encoding layers. If False, enemies are separated into individual layers.
+    compress_enemies: bool
+
+    #: bool: Encodes snake body segments using a one-hot representation to differentiate the order of body parts.
     include_snake_body_as_one_hot: bool
+
+    #: bool: Includes a standard spatial layer showing the occupied positions of all snake bodies.
     include_snake_body: bool
+
+    #: bool: Includes a specific spatial layer indicating the positions of snake heads.
     include_snake_head: bool
+
+    #: bool: Includes a specific spatial layer indicating the positions of snake tails.
     include_snake_tail: bool
+
+    #: bool: Includes a feature or layer representing the current health (starvation countdown) of the snakes.
     include_snake_health: bool
+
+    #: bool: Includes a feature or layer representing the current length of the snakes.
     include_snake_length: bool
+
+    #: bool: Includes a spatial distance map (e.g., Manhattan distance from the ego snake's head to other tiles).
     include_distance_map: bool
-    flatten: bool  # return everything as a flattened 1D-Array
+
+    #: bool: If True, flattens the multi-dimensional spatial tensor into a 1D array before returning.
+    flatten: bool
+
+    #: bool: Centers the spatial observation tensor around the ego snake's head (egocentric view) rather than using an absolute board (allocentric view).
     centered: bool
+
+    #: bool: Includes a layer detailing area control metrics, such as a Voronoi partition showing which snake is closest to which tiles.
     include_area_control: bool
+
+    #: bool: Includes a feature or gradient layer representing the distance to the nearest food item.
     include_food_distance: bool
+
+    #: bool: Includes a spatial layer mapping hazard zones (e.g., the shrinking hazard sauce in Royale mode).
     include_hazards: bool
+
+    #: bool: Includes a feature representing the distance from the ego snake's head to its own tail.
     include_tail_distance: bool
+
+    #: bool: Includes a global feature representing the total number of food items currently spawned on the board.
     include_num_food_on_board: bool = False
+
+    #: bool: Includes an environment temperature input feature, often used for modulating exploration or custom game modes.
     temperature_input: bool = False
+
+    #: bool: If True, represents the temperature input as a single global scalar value.
     single_temperature_input: bool = True
-    fixed_food_spawn_chance: float = -1  # -1 is the code for using default game value
+
+    #: float: Sets a fixed probability for food spawning. A value of `-1` indicates that the default game rules for food spawn chance should be used.
+    fixed_food_spawn_chance: float = -1.0
+
+    #: bool: Includes a mask layer representing the limited field of view of the snake, useful for partially observable training environments.
     include_view_mask: bool = False
 
 
