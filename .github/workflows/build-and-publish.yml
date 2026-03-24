@@ -11,6 +11,7 @@ jobs:
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    permissions: {}
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +53,7 @@ jobs:
   build_sdist:
     name: Build sdist
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - uses: actions/checkout@v4
         with:
