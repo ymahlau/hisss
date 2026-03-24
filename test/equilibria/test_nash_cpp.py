@@ -33,7 +33,7 @@ class TestNashSolverCPP(unittest.TestCase):
             [[1, -1], [1, -1], [-1, 1], [-1, 1]], dtype=float
         )
         values, action_probs = calculate_nash_equilibrium(
-            available_actions, joint_action_list, joint_action_values, use_cpp=True
+            available_actions, joint_action_list, joint_action_values
         )
         print(values)
         print(action_probs)
@@ -62,7 +62,7 @@ class TestNashSolverCPP(unittest.TestCase):
             [[3, 3], [3, 2], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float
         )
         values, action_probs = calculate_nash_equilibrium(
-            available_actions, joint_action_list, joint_action_values, use_cpp=True
+            available_actions, joint_action_list, joint_action_values
         )
         print(values)
         print(action_probs)
@@ -86,7 +86,7 @@ class TestNashSolverCPP(unittest.TestCase):
             [[3, 3], [3, 3], [2, 2], [5, 6], [0, 3], [6, 1]], dtype=float
         )
         values, action_probs = calculate_nash_equilibrium(
-            available_actions, joint_action_list, joint_action_values, use_cpp=False
+            available_actions, joint_action_list, joint_action_values
         )
         print(values)
         print(action_probs)
@@ -112,7 +112,7 @@ class TestNashSolverCPP(unittest.TestCase):
             / 10.0
         )
         values, action_probs = calculate_nash_equilibrium(
-            available_actions, joint_action_list, joint_action_values, use_cpp=False
+            available_actions, joint_action_list, joint_action_values
         )
         print(values)
         print(action_probs)

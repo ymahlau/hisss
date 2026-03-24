@@ -1,3 +1,4 @@
+from hisss.equilibria.nash import calculate_nash_equilibrium
 from hisss.game.battlesnake import DOWN, LEFT, RIGHT, UP, BattleSnakeGame
 from hisss.game.config import (
     BattleSnakeConfig,
@@ -30,4 +31,5 @@ __all__ = [
     "StandardBattleSnakeRewardConfig",
     "KillBattleSnakeRewardConfig",
     "BattleSnakeEncodingConfig",
+    "calculate_nash_equilibrium",
 ]

@@ -6,6 +6,8 @@ import numpy as np
 
 
 class BattleSnakeRewardType(Enum):
+    """Enumeration of available BattleSnake reward function types."""
+
     STANDARD = "STANDARD"
     KILL = "KILL"
     COOP = "COOP"
@@ -13,11 +15,21 @@ class BattleSnakeRewardType(Enum):
 
 @dataclass
 class BattleSnakeRewardConfig:
+    """Base configuration class for BattleSnake reward functions."""
+
+    #: The reward given to a snake for surviving a turn.
     living_reward: float = 0.0
+    #: The base reward given/taken when a snake wins/dies.
     terminal_reward: float = 1.0
 
 
 class BattleSnakeRewardFunction(ABC):
+    """Abstract base class for BattleSnake reward functions.
+
+    Attributes:
+        cfg (BattleSnakeRewardConfig): The configuration governing this reward function.
+    """
+
     def __init__(self, cfg: BattleSnakeRewardConfig):
         self.cfg = cfg
 
@@ -34,10 +46,24 @@ class BattleSnakeRewardFunction(ABC):
 
 @dataclass
 class StandardBattleSnakeRewardConfig(BattleSnakeRewardConfig):
+    """Configuration for the Standard BattleSnake reward function.
+
+    Assigns a negative terminal reward to players who died this turn. The last
+    remaining player receives a positive terminal reward. Surviving players receive
+    a constant living reward (if configured) while the game is ongoing.
+    """
+
     pass
 
 
 class BattleSnakeRewardFunctionStandard(BattleSnakeRewardFunction):
+    """Standard reward function for BattleSnake.
+
+    Assigns a negative terminal reward to players who died this turn. The last
+    remaining player receives a positive terminal reward. Surviving players receive
+    a constant living reward (if configured) while the game is ongoing.
+    """
+
     def __init__(self, cfg: StandardBattleSnakeRewardConfig):
         super().__init__(cfg)
         self.cfg = cfg
@@ -72,16 +98,26 @@ class BattleSnakeRewardFunctionStandard(BattleSnakeRewardFunction):
 
 @dataclass
 class KillBattleSnakeRewardConfig(BattleSnakeRewardConfig):
+    """Configuration for the Kill-based BattleSnake reward function.
+
+    This reward function acts as a zero-sum or monotone game where cumulative
+    un-discounted rewards balance out:
+    - 2 players alive: zero-sum game around cum_reward of 2/3
+    - 3 players alive: monotone game around cum_reward of 1/3 (kill reward is 1/3)
+    - 4 players alive: monotone game around starting point of zero
+    """
+
     pass
 
 
 class BattleSnakeRewardFunctionKill(BattleSnakeRewardFunction):
-    """
-    Reward function that assigns rewards if an enemy is killed. This reward function is monotone in a sense that
-    all cumulative un-discounted rewards add up to zero:
-    if two players alive: zero-sum game around cum_reward of 2/3
-    if three players alive: monotone game around cum_reward of 1/3  (kill reward is 1/3)
-    if four players alive: monotone game around starting point of zero
+    """Reward function that assigns fractional rewards when enemies are killed.
+
+    This reward function acts as a zero-sum or monotone game where cumulative
+    un-discounted rewards balance out:
+    - 2 players alive: zero-sum game around cum_reward of 2/3
+    - 3 players alive: monotone game around cum_reward of 1/3 (kill reward is 1/3)
+    - 4 players alive: monotone game around starting point of zero
     """
 
     def __init__(self, cfg: KillBattleSnakeRewardConfig):
@@ -146,6 +182,12 @@ class BattleSnakeRewardFunctionKill(BattleSnakeRewardFunction):
 
 @dataclass
 class CooperationBattleSnakeRewardConfig(BattleSnakeRewardConfig):
+    """Configuration for the Cooperation BattleSnake reward function.
+
+    Defaults to providing a small living reward and a negative terminal reward
+    when a snake dies.
+    """
+
     living_reward: float = field(default=0.02)
     terminal_reward: float = -0.25
 

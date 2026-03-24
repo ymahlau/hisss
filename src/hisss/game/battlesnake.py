@@ -18,18 +18,55 @@ from hisss.game.encoding import num_layers_general, layers_per_player, layers_pe
 from hisss.game.rewards import get_battlesnake_reward_func_from_cfg
 from hisss.game.utils import int_to_perm
 
+#: Constant representing the UP-direction in the Grid world
 UP: int = 0
+
+#: Constant representing the RIGHT-direction in the Grid world
 RIGHT: int = 1
+
+#: Constant representing the DOWN-direction in the Grid world
 DOWN: int = 2
+
+#: Constant representing the LEFT-direction in the Grid world
 LEFT: int = 3
 
 
 class BattleSnakeGame:
+    """Battlesnake game environment backed by a C++ simulation engine.
+
+    Wraps a heap-allocated C++ ``GameState`` object.  Always call :meth:`close`
+    when the environment is no longer needed — or use it as a context manager —
+    to free the underlying C++ memory.  :meth:`__del__` provides a fallback but
+    is not guaranteed to run promptly.
+
+    Attributes:
+        cfg: Game configuration used to create this environment.
+        turns_played: Number of turns elapsed since the last :meth:`reset`.
+        is_closed: Whether :meth:`close` has already been called.
+        layer_explanation: Mapping from channel name to index in the observation
+            tensor returned by :meth:`get_obs`.
+    """
+
     def __init__(
         self,
         cfg: BattleSnakeConfig,
         state_p=None,  # Optional[ct.POINTER(Struct)],
     ):
+        """Initialise a new BattleSnakeGame.
+
+        Args:
+            cfg: Configuration dataclass that controls board size, number of
+                players, food rules, game mode, encoding, and rewards.
+            state_p: Optional pre-existing C++ game-state pointer.  When
+                ``None`` (the default) a fresh game is created from *cfg*.
+                Pass an existing pointer only when cloning an environment
+                internally.
+
+        Note:
+            :func:`post_init_battlesnake_cfg` and
+            :func:`validate_battlesnake_cfg` are called automatically when
+            *state_p* is ``None``.
+        """
         self.cfg = cfg
         self._cum_rewards = np.zeros(shape=(self.cfg.num_players,), dtype=float)
         self._last_actions: Optional[tuple[int, ...]] = None
@@ -56,9 +93,19 @@ class BattleSnakeGame:
 
     @property
     def num_actions(self):
+        """Number of actions available to each player (always 4: UP, RIGHT, DOWN, LEFT)."""
         return self.cfg.num_actions
 
     def available_joint_actions(self) -> list[tuple[int, ...]]:
+        """Return every legal combination of actions for all players currently at turn.
+        Legal actions may be restricted by actions that would lead to a certain death,
+        depending on the game configuration.
+
+        Returns:
+            List of tuples, one entry per player at turn.  Each tuple element
+            is an action index for the corresponding player returned by
+            :meth:`players_at_turn`.
+        """
         action_lists = []
         for player in range(self.num_players):
             current_list = self.available_actions(player)
@@ -68,6 +115,17 @@ class BattleSnakeGame:
         return result
 
     def illegal_actions(self, player: int) -> list[int]:
+        """Return the action indices that are illegal for *player*.
+
+        Args:
+            player: Zero-based player index.
+
+        Returns:
+            List of action indices not present in :meth:`available_actions`.
+
+        Raises:
+            ValueError: If *player* is out of range.
+        """
         if player < 0 or player >= self.num_players:
             raise ValueError(f"Snake index out of range: {player}")
         all_action_set = {i for i in range(self.num_actions)}
@@ -77,6 +135,11 @@ class BattleSnakeGame:
         return illegal_actions
 
     def illegal_joint_actions(self) -> list[tuple[int, ...]]:
+        """Return every joint-action combination that is not fully legal.
+
+        Returns:
+            List of tuples that are absent from :meth:`available_joint_actions`.
+        """
         action_lists = [
             [i for i in range(self.num_actions)] for _ in range(self.num_players)
         ]
@@ -173,6 +236,11 @@ class BattleSnakeGame:
         )
 
     def reset_saved_properties(self):
+        """Clear all intra-turn caches (observations, available actions, player lists).
+
+        Called automatically after each :meth:`step` and :meth:`reset`.  Only
+        call this manually if you mutate the game state externally.
+        """
         self.obs_dict: dict[int, np.ndarray] = dict()
         self.available_actions_save: dict[int, list[int]] = dict()
         self.players_at_turn_save = None
@@ -181,6 +249,21 @@ class BattleSnakeGame:
         self.players_alive_last = None
 
     def get_obs_shape(self, never_flatten=False) -> tuple[int, ...]:
+        """Return the shape of a single-player observation tensor.
+
+        Args:
+            never_flatten: When ``True``, return the spatial shape
+                ``(width, height, channels)`` even if the encoding config has
+                ``flatten=True``.
+
+        Returns:
+            Tuple of ints describing the observation shape.  Returns a
+            1-element tuple ``(n,)`` when the config requests flattening (and
+            *never_flatten* is ``False``), otherwise ``(width, height, channels)``.
+
+        Raises:
+            ValueError: If the game has been closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # number layers
@@ -207,11 +290,24 @@ class BattleSnakeGame:
             )
         return width, height, z_dim
 
-    # reward, done, info as return
-    # action is the joint action of all currently active players
     def step(self, actions: tuple[int, ...]) -> tuple[np.ndarray, bool, dict]:
-        """
-        reward, done, info = step(action)
+        """Advance the game by one turn.
+
+        Args:
+            actions: Joint action tuple — one action per player currently at
+                turn, in the order returned by :meth:`players_at_turn`.
+                Actions must come from :meth:`available_joint_actions`.
+
+        Returns:
+            A 3-tuple ``(rewards, done, info)`` where *rewards* is a
+            ``float64`` array of shape ``(num_players,)``, *done* is ``True``
+            when the game has reached a terminal state, and *info* is an empty
+            dict (reserved for future use).
+
+        Raises:
+            Exception: If the game is already in a terminal state.
+            ValueError: If the length of *actions* does not match the number
+                of players at turn, or if *actions* is not a legal joint action.
         """
         if self.is_terminal():
             raise Exception("Cannot call step on terminal state")
@@ -255,6 +351,15 @@ class BattleSnakeGame:
         return rewards, done, {}
 
     def get_copy(self) -> "BattleSnakeGame":
+        """Return an independent deep copy of this environment.
+
+        The copy shares the same :attr:`cfg` reference but has its own C++
+        game-state object, cumulative rewards, and caches.  Both the original
+        and the copy must be closed independently.
+
+        Returns:
+            A new :class:`BattleSnakeGame` with identical state.
+        """
         cpy = self._get_copy()
         cpy._last_actions = self._last_actions
         cpy._cum_rewards = self._cum_rewards.copy()
@@ -262,44 +367,94 @@ class BattleSnakeGame:
         return cpy
 
     def is_player_at_turn(self, player: int) -> bool:
+        """Return whether *player* must provide an action this turn.
+
+        Args:
+            player: Zero-based player index.
+
+        Returns:
+            ``True`` if the player is alive and has at least one legal action.
+        """
         return player in self.players_at_turn()
 
     @property
     def num_players(self) -> int:
+        """Total number of players (snakes) in this game, including dead ones."""
         return self.cfg.num_players
 
     def num_players_at_turn(self) -> int:
+        """Return the number of players who must act this turn."""
         return len(self.players_at_turn())
 
     def players_not_alive(self) -> list[int]:
+        """Return the indices of all dead (eliminated) players.
+
+        Returns:
+            List of player indices that are no longer alive.
+        """
         result = set(range(self.num_players)) - set(self.players_alive())
         return list(result)
 
     def num_players_alive(self) -> int:
+        """Return the number of players that are still alive."""
         return len(self.players_alive())
 
     def is_player_alive(self, player: int) -> bool:
+        """Return whether *player* is still alive.
+
+        Args:
+            player: Zero-based player index.
+        """
         return player in self.players_alive()
 
     def get_last_actions(self) -> Optional[tuple[int, ...]]:
+        """Return the joint action that was passed to the most recent :meth:`step`.
+
+        Returns:
+            Tuple of action indices, or ``None`` if no step has been taken yet.
+        """
         return self._last_actions
 
     def set_last_actions(self, last_actions: Optional[tuple[int, ...]]):
+        """Override the recorded last-step joint action.
+
+        Args:
+            last_actions: Tuple of action indices, or ``None`` to clear.
+        """
         self._last_actions = last_actions
 
     def get_cum_rewards(self) -> np.ndarray:
+        """Return the cumulative rewards accumulated since the last :meth:`reset`.
+
+        Returns:
+            Float array of shape ``(num_players,)``.
+        """
         return self._cum_rewards
 
     def set_cum_rewards(self, cum_rewards: np.ndarray):
+        """Override the cumulative rewards array.
+
+        Args:
+            cum_rewards: Float array of shape ``(num_players,)``.
+        """
         self._cum_rewards = cum_rewards
 
     def play_random_steps(self, steps: int):
+        """Advance the game by up to *steps* turns using uniformly random actions.
+
+        Stops early if the game reaches a terminal state before all steps are
+        consumed.
+
+        Args:
+            steps: Maximum number of turns to play.
+        """
         rndm = random.Random()
         while (not self.is_terminal()) and steps > 0:
             steps -= 1
             self.step(rndm.choice(self.available_joint_actions()))
 
     def get_last_action(self) -> Optional[tuple[int, ...]]:
+        """Alias for :meth:`get_last_actions`."""
         return self._last_actions
 
     def _get_copy(self) -> "BattleSnakeGame":
@@ -325,10 +480,21 @@ class BattleSnakeGame:
         return cpy
 
     def close(self):
+        """Free the underlying C++ game-state object.
+
+        Must be called when the environment is no longer needed to avoid
+        memory leaks.  Calling any other method after ``close()`` will raise a
+        ``ValueError``.
+        """
         CPP_LIB.lib.close_cpp(self.state_p)
         self.is_closed = True
 
     def reset(self):
+        """Reinitialise the game to its starting state.
+
+        Resets cumulative rewards, turn counter, and last actions, then
+        re-creates the C++ game state from the original config.
+        """
         self._cum_rewards = np.zeros(shape=(self.num_players,), dtype=float)
         self._last_actions = None
         self.turns_played = 0
@@ -342,6 +508,20 @@ class BattleSnakeGame:
         self.reset_saved_properties()
 
     def available_actions(self, player: int) -> list[int]:
+        """Return the legal action indices for *player* in the current state.
+
+        Results are cached for the lifetime of the current turn.
+
+        Args:
+            player: Zero-based player index.
+
+        Returns:
+            List of legal action indices.  Returns an empty list if the player
+            is dead.
+
+        Raises:
+            ValueError: If the game is closed or *player* is out of range.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         if player < 0 or player >= self.cfg.num_players:
@@ -365,6 +545,17 @@ class BattleSnakeGame:
         return action_list
 
     def players_at_turn(self) -> list[int]:
+        """Return the indices of all players that must act this turn.
+
+        A player is at turn if they are alive and have at least one legal
+        action.  Results are cached until the next :meth:`step`.
+
+        Returns:
+            Sorted list of player indices.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         if self.players_at_turn_save is None:
@@ -376,6 +567,16 @@ class BattleSnakeGame:
         return self.players_at_turn_save
 
     def players_alive(self) -> list[int]:
+        """Return the indices of all living players.
+
+        Results are cached until the next :meth:`step`.
+
+        Returns:
+            List of player indices that are still alive.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # call c++
@@ -390,6 +591,15 @@ class BattleSnakeGame:
         return self.players_alive_save
 
     def player_lengths(self) -> list[int]:
+        """Return the length (number of segments) of each snake.
+
+        Returns:
+            List of length ``num_players``.  Dead snakes retain their last
+            known length value from C++.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         res_arr = np.zeros(shape=(self.num_players,), dtype=ct.c_int)
@@ -398,6 +608,14 @@ class BattleSnakeGame:
         return list(res_arr)
 
     def player_healths(self) -> list[int]:
+        """Return the current health value of each snake.
+
+        Returns:
+            List of health values of length ``num_players``.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         res_arr = np.zeros(shape=(self.num_players,), dtype=ct.c_int)
@@ -408,6 +626,24 @@ class BattleSnakeGame:
     def player_pos(
         self, player: int
     ) -> list[tuple[int, int]]:  # returns list of length BODY_LEN != SNAKE_LEN
+        """Return the body positions of *player*'s snake as ``(x, y)`` tuples.
+
+        The first element is the head.  Note that the body array length
+        (``BODY_LEN``) may differ from the logical snake length
+        (``SNAKE_LEN``) during the turn the snake just ate food.
+
+        This method calls into C++ on every invocation and should only be
+        used for debugging or infrequent queries.
+
+        Args:
+            player: Zero-based player index.
+
+        Returns:
+            List of ``(x, y)`` coordinate pairs, head first.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # this is inefficient and should only be used for debugging
@@ -422,6 +658,18 @@ class BattleSnakeGame:
         return res_list
 
     def all_player_pos(self) -> dict[int, list[tuple[int, int]]]:
+        """Return body positions for every snake.
+
+        This method calls into C++ for each alive snake and should only be
+        used for debugging or infrequent queries.
+
+        Returns:
+            Dict mapping player index to a list of ``(x, y)`` tuples (head
+            first).  Dead players map to an empty list.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # this is inefficient and should only be used for debugging
@@ -434,11 +682,25 @@ class BattleSnakeGame:
         return res_dict
 
     def num_food(self) -> int:
+        """Return the number of food items currently on the board.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         return CPP_LIB.lib.num_food_cpp(self.state_p)
 
     def get_hazards(self) -> np.ndarray:
+        """Return a boolean array indicating hazard tiles.
+
+        Returns:
+            Bool array of shape ``(h, w)`` — ``True`` where a hazard tile
+            exists (e.g. the shrinking ring in royale mode).
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         arr = np.zeros(shape=(self.cfg.w, self.cfg.h), dtype=bool)
@@ -446,7 +708,17 @@ class BattleSnakeGame:
         CPP_LIB.lib.hazards_cpp(self.state_p, arr_p)
         return arr.T
 
-    def food_pos(self) -> np.ndarray:  # returns array of shape (num_food, 2)
+    def food_pos(self) -> np.ndarray:
+        """Return the coordinates of all food items on the board.
+
+        Returns:
+            Integer array of shape ``(num_food, 2)`` where each row is
+            ``[x, y]``.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
+        # returns array of shape (num_food, 2)
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         n = self.num_food()
@@ -457,6 +729,15 @@ class BattleSnakeGame:
         return res_arr
 
     def is_terminal(self) -> bool:
+        """Return whether the game has ended.
+
+        The game is terminal when fewer than two players are at turn (in a
+        multi-player game) or when no player is at turn (in a single-player
+        game).
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         # a game has ended if no / only the last player alive is at turn
@@ -509,12 +790,25 @@ class BattleSnakeGame:
         return res_dict
 
     def render(self):
+        """Print an ASCII representation of the current board to stdout.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         str_repr = self.get_str_repr()
         print(str_repr)
 
     def get_str_repr(self) -> str:
+        """Return an ASCII string representation of the current board.
+
+        Returns:
+            Multi-line string visualising the board (snakes, food, hazards).
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         arr = ct.create_string_buffer(self.cfg.w * self.cfg.h * 3)
@@ -604,6 +898,20 @@ class BattleSnakeGame:
         return obs_arr
 
     def __eq__(self, other: Any):
+        """Return whether this game state is identical to *other*.
+
+        Delegates the comparison to the C++ engine.
+
+        Args:
+            other: Object to compare against.
+
+        Returns:
+            ``True`` if *other* is a :class:`BattleSnakeGame` with the same
+            C++ state, ``False`` otherwise.
+
+        Raises:
+            ValueError: If this game is closed.
+        """
         if not isinstance(other, BattleSnakeGame):
             return False
         if self.is_closed:
@@ -612,6 +920,19 @@ class BattleSnakeGame:
         return equal
 
     def get_symmetry_count(self):
+        """Return the total number of distinct board symmetries.
+
+        Symmetries combine 8 spatial transformations (4 rotations × 2 flips)
+        with permutations of enemy player slots.  When ``compress_enemies`` is
+        enabled there is only one enemy slot, so only 8 symmetries exist.
+        Otherwise there are ``8 × (num_players − 1)!`` symmetries.
+
+        Returns:
+            Integer count of symmetries.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
         if self.is_closed:
             raise ValueError("Cannot call function on closed game")
         if self.cfg.ec.compress_enemies:
@@ -627,6 +948,32 @@ class BattleSnakeGame:
         dict[int, int],
         dict[int, int],
     ]:
+        """Return observation tensors for all players currently at turn.
+
+        The observations are stacked along axis 0 in :meth:`players_at_turn`
+        order.  A symmetry transformation (rotation and/or flip, plus an
+        optional enemy-slot permutation) may be applied.
+
+        Args:
+            symmetry: Integer index selecting the transformation to apply.
+                ``0`` is the identity.  ``None`` samples a transformation
+                uniformly at random.  Valid range is
+                ``[0, get_symmetry_count())``.
+
+        Returns:
+            A 3-tuple ``(obs, perm, inv_perm)`` where:
+
+            - *obs* — float32 array of shape
+              ``(num_players_at_turn, width, height, channels)`` or
+              ``(num_players_at_turn, width * height * channels)`` when
+              flattening is enabled.
+            - *perm* — dict mapping original action indices to transformed
+              action indices.
+            - *inv_perm* — inverse of *perm*.
+
+        Raises:
+            ValueError: If the game is closed or already in a terminal state.
+        """
         temperatures = None
         single_temperature = None
         if self.is_closed:
@@ -774,6 +1121,14 @@ class BattleSnakeGame:
             self.is_closed = True
 
     def get_bool_board_matrix(self) -> np.ndarray:
+        """Return the board occupancy matrix (constrictor mode only).
+
+        Returns:
+            Int8 array of shape ``(w, h)`` encoding which tiles are occupied.
+
+        Raises:
+            ValueError: If the game is not configured for constrictor mode.
+        """
         if not self.cfg.constrictor:
             raise ValueError("Board matrix currently only supported in constrictor")
         arr = np.zeros((self.cfg.w, self.cfg.h), dtype=ct.c_int8)
@@ -782,6 +1137,16 @@ class BattleSnakeGame:
         return arr
 
     def get_state(self) -> BattleSnakeState:
+        """Capture the current game state as a serialisable snapshot.
+
+        The returned :class:`~hisss.game.state.BattleSnakeState` can be
+        passed to :meth:`set_state` (on any compatible environment) to restore
+        this exact position.
+
+        Returns:
+            A :class:`~hisss.game.state.BattleSnakeState` describing the
+            current board.
+        """
         snakes_alive = self.players_alive()
         snakes_alive_bool = [i in snakes_alive for i in range(self.num_players)]
         player_pos = {i: self.player_pos(i) for i in range(self.num_players)}
@@ -803,6 +1168,15 @@ class BattleSnakeGame:
         return state
 
     def set_state(self, state: BattleSnakeState):
+        """Restore the game to a previously captured state.
+
+        Resets cumulative rewards and last actions, then re-initialises the
+        C++ game state from *state*.
+
+        Args:
+            state: Snapshot obtained from :meth:`get_state` (on any
+                compatible environment with the same config).
+        """
         self._cum_rewards = np.zeros(shape=(self.cfg.num_players,), dtype=float)
         self._last_actions = None
         self._set_state(state)
