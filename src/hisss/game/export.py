@@ -1,0 +1,122 @@
+import json
+import uuid
+
+import numpy as np
+
+from hisss.game.battlesnake import BattleSnakeGame
+
+
+_SNAKE_COLORS = [
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#FF00FF",
+    "#00FFFF",
+    "#FF8000",
+    "#8000FF",
+]
+
+
+def _ruleset_name(cfg) -> str:
+    if cfg.wrapped:
+        return "wrapped"
+    if cfg.royale:
+        return "royale"
+    if cfg.constrictor:
+        return "constrictor"
+    return "standard"
+
+
+def _map_name(cfg) -> str:
+    if cfg.royale:
+        return "royale"
+    return "standard"
+
+
+def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
+    """Serialize a BattleSnakeGame state to a Battlesnake API-compatible JSON string.
+
+    Args:
+        game: The game instance to serialize.
+        player: Zero-based index of the player whose perspective to use as ``"you"``.
+
+    Returns:
+        JSON string matching the Battlesnake API ``/move`` request body format.
+
+    Raises:
+        ValueError: If the game is closed or if ``player`` is not alive.
+    """
+    if game.is_closed:
+        raise ValueError("Cannot serialize a closed game")
+    if not game.is_player_alive(player):
+        raise ValueError(f"Player {player} is not alive")
+
+    cfg = game.cfg
+
+    game_section = {
+        "id": str(uuid.uuid4()),
+        "ruleset": {
+            "name": _ruleset_name(cfg),
+            "version": "v1.1.15",
+            "settings": {
+                "foodSpawnChance": cfg.food_spawn_chance,
+                "minimumFood": cfg.min_food,
+                "hazardDamagePerTurn": cfg.hazard_damage,
+            },
+        },
+        "map": _map_name(cfg),
+        "source": "league",
+        "timeout": 500,
+    }
+
+    food_arr = game.food_pos()  # shape (n, 2), rows are [x, y]
+    food_list = [{"x": int(row[0]), "y": int(row[1])} for row in food_arr]
+
+    hazard_arr = game.get_hazards()
+    hazard_coords = np.argwhere(hazard_arr)
+    hazards_list = [{"x": int(pos[0]), "y": int(pos[1])} for pos in hazard_coords]
+
+    healths = game.player_healths()
+    lengths = game.player_lengths()
+
+    def _make_snake(p: int) -> dict:
+        body_coords = game.player_pos(p)
+        body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
+        head = body_list[0] if body_list else {"x": 0, "y": 0}
+        return {
+            "id": f"snake-{p}",
+            "name": f"Snake {p}",
+            "health": int(healths[p]),
+            "body": body_list,
+            "latency": "0",
+            "head": head,
+            "length": int(lengths[p]),
+            "shout": "",
+            "customizations": {
+                "color": _SNAKE_COLORS[p % len(_SNAKE_COLORS)],
+                "head": "default",
+                "tail": "default",
+            },
+        }
+
+    snakes_list = [
+        _make_snake(p) for p in range(game.num_players) if game.is_player_alive(p)
+    ]
+
+    board_section = {
+        "height": int(cfg.h),
+        "width": int(cfg.w),
+        "food": food_list,
+        "hazards": hazards_list,
+        "snakes": snakes_list,
+    }
+
+    return json.dumps(
+        {
+            "game": game_section,
+            "turn": game.turns_played,
+            "board": board_section,
+            "you": _make_snake(player),
+        }
+    )
