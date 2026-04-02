@@ -82,7 +82,7 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
         "id": str(uuid.uuid4()),
         "ruleset": {
             "name": _ruleset_name(cfg),
-            "version": "v1.1.15",
+            "version": "v1",
             "settings": {
                 "foodSpawnChance": cfg.food_spawn_chance,
                 "minimumFood": cfg.min_food,
@@ -90,7 +90,7 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
             },
         },
         "map": _map_name(cfg),
-        "source": "league",
+        "source": "hisss",
         "timeout": 500,
     }
 
@@ -120,7 +120,7 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
         else:
             body_list = _build_restricted_body(body_coords)
             if not body_list:
-                return None
+                body_list = [{"x": -1, "y": -1}]
             health = 0
             length = len(body_list)
         head = body_list[0] if body_list else {"x": 0, "y": 0}

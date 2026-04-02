@@ -247,20 +247,25 @@ class TestRestrictedExport(unittest.TestCase):
 
     # Fully hidden enemy
 
-    def test_fully_hidden_enemy_absent(self):
+    def test_fully_hidden_enemy_present_with_unknown_token(self):
         # player 0 at [5,5], player 1 at [9,9], distance=8 > radius=3
+        # fully hidden snakes are included with a single [-1,-1] body token
         game = _restricted_game(view_radius=3)
         data = json.loads(to_battlesnake_json(game, 0))
         ids = [s["id"] for s in data["board"]["snakes"]]
-        self.assertNotIn("snake-1", ids)
+        self.assertIn("snake-1", ids)
+        enemy = next(s for s in data["board"]["snakes"] if s["id"] == "snake-1")
+        self.assertEqual([{"x": -1, "y": -1}], enemy["body"])
         game.close()
 
-    def test_fully_hidden_enemy_absent_from_you_perspective(self):
+    def test_fully_hidden_enemy_present_from_you_perspective(self):
         # player 1's perspective: player 0 at [5,5] is distance 8 away from [9,9]
         game = _restricted_game(view_radius=3)
         data = json.loads(to_battlesnake_json(game, 1))
         ids = [s["id"] for s in data["board"]["snakes"]]
-        self.assertNotIn("snake-0", ids)
+        self.assertIn("snake-0", ids)
+        enemy = next(s for s in data["board"]["snakes"] if s["id"] == "snake-0")
+        self.assertEqual([{"x": -1, "y": -1}], enemy["body"])
         game.close()
 
     # Visible enemy
