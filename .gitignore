@@ -4,7 +4,6 @@ uv.lock
 *.so
 main*.py
 .ninja*
-*.json
 build.ninja
 cmake_install*
 CMakeCache.txt
@@ -14,3 +13,4 @@ CMakeFiles/
 .venv
 docs/build
 docs/source/api
+.skbuild-info.json

@@ -204,6 +204,8 @@ class BattleSnakeGame:
             num_init_food = len(self.cfg.init_food_pos)
             np_arr = np.asarray(self.cfg.init_food_pos, dtype=ct.c_int)
             food_pos_p = np_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        # food spawn turns: NULL lets C++ fill in init_turns_played as fallback
+        food_spawn_turns_p = ct.cast(0, ct.POINTER(ct.c_int))
         # hazards, we need to transpose because cpp uses flattened array (this is more efficient)
         hazard_arr = np.zeros(shape=(self.cfg.h, self.cfg.w), dtype=bool)
         if self.cfg.init_hazards is not None:
@@ -224,6 +226,7 @@ class BattleSnakeGame:
             snake_pos_p,
             num_init_food,
             food_pos_p,
+            food_spawn_turns_p,
             snake_alive_p,
             snake_health_p,
             snake_len_p,
@@ -728,6 +731,25 @@ class BattleSnakeGame:
         )
         return res_arr
 
+    def food_spawn_turns(self) -> np.ndarray:
+        """Return the turn each food item spawned, in the same order as food_pos().
+
+        Returns:
+            Integer array of shape ``(num_food,)`` where each element is the
+            turn the corresponding food item first appeared on the board.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
+        if self.is_closed:
+            raise ValueError("Cannot call function on closed game")
+        n = self.num_food()
+        res_arr = np.zeros(shape=(n,), dtype=ct.c_int)
+        CPP_LIB.lib.food_spawn_turns_cpp(
+            self.state_p, res_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        )
+        return res_arr
+
     def is_terminal(self) -> bool:
         """Return whether the game has ended.
 
@@ -1042,6 +1064,11 @@ class BattleSnakeGame:
         result = obs_res.copy()  # necessary because of negative stride
         # view radius
         if self.cfg.view_radius is not None:
+            # Pre-compute newly-spawned food once (same for all players)
+            new_food_pos: np.ndarray | None = None
+            if "current_food" in self.layer_explanation:
+                all_spawn_turns = self.food_spawn_turns()
+                new_food_pos = self.food_pos()[all_spawn_turns == self.turns_played]
             masks = []
             for p_self in self.players_at_turn():
                 scaled_distance = result[
@@ -1051,12 +1078,17 @@ class BattleSnakeGame:
                 cur_mask = (distance_map <= self.cfg.view_radius).astype(float)
                 masks.append(cur_mask)
                 if "current_food" in self.layer_explanation:
-                    cur_layer = result[
-                        p_self, :, :, self.layer_explanation["current_food"]
-                    ]
-                    result[p_self, :, :, self.layer_explanation["current_food"]] = (
-                        cur_layer * cur_mask
-                    )
+                    food_idx = self.layer_explanation["current_food"]
+                    cur_layer = result[p_self, :, :, food_idx]
+                    result[p_self, :, :, food_idx] = cur_layer * cur_mask
+                    # Food that spawned this turn is always visible for one step
+                    if new_food_pos is not None and len(new_food_pos) > 0:
+                        spawn_mask = self._new_food_obs_mask(
+                            new_food_pos, p_self, num_rot, flip
+                        )
+                        result[p_self, :, :, food_idx] = np.maximum(
+                            result[p_self, :, :, food_idx], spawn_mask
+                        )
                 for p in range(
                     1, self.num_players
                 ):  # do not restrict view on own player
@@ -1115,6 +1147,55 @@ class BattleSnakeGame:
                 result = np.concatenate((result, mask_arr[:, :, :, None]), axis=-1)
         return result, perm, inv_perm
 
+    def _new_food_obs_mask(
+        self,
+        new_food_pos: np.ndarray,
+        player: int,
+        num_rot: int,
+        flip: bool,
+    ) -> np.ndarray:
+        """Build a 2D mask with 1.0 at newly-spawned food positions in observation space.
+
+        Replicates the coordinate transformation applied by the C++ encoder (centering
+        + optional tiling for wrapped boards) followed by the same rot90/flip applied
+        to the full observation, so the result aligns with the food layer in ``result``.
+        """
+        if self.cfg.ec.centered:
+            pre_w = 2 * self.cfg.w - 1
+            pre_h = 2 * self.cfg.h - 1
+            head_x, head_y = self.player_pos(player)[0]
+            x_off = self.cfg.w - head_x - 1
+            y_off = self.cfg.h - head_y - 1
+        else:
+            if self.cfg.wrapped:
+                pre_w, pre_h = self.cfg.w, self.cfg.h
+                x_off, y_off = 0, 0
+            else:
+                pre_w, pre_h = self.cfg.w + 2, self.cfg.h + 2
+                x_off, y_off = 1, 1
+
+        mask = np.zeros((pre_w, pre_h), dtype=np.float32)
+        for pos in new_food_pos:
+            fx, fy = int(pos[0]), int(pos[1])
+            xi, yi = fx + x_off, fy + y_off
+            candidates = [(xi, yi)]
+            if self.cfg.wrapped and self.cfg.ec.centered:
+                for dx in (-self.cfg.w, self.cfg.w):
+                    candidates.append((xi + dx, yi))
+                for dy in (-self.cfg.h, self.cfg.h):
+                    candidates.append((xi, yi + dy))
+                for dx in (-self.cfg.w, self.cfg.w):
+                    for dy in (-self.cfg.h, self.cfg.h):
+                        candidates.append((xi + dx, yi + dy))
+            for cx, cy in candidates:
+                if 0 <= cx < pre_w and 0 <= cy < pre_h:
+                    mask[cx, cy] = 1.0
+
+        mask = np.rot90(mask, k=num_rot, axes=(0, 1))
+        if flip:
+            mask = np.flip(mask, axis=0)
+        return mask
+
     def __del__(self):
         if not self.is_closed:
             self.close()
@@ -1151,6 +1232,7 @@ class BattleSnakeGame:
         snakes_alive_bool = [i in snakes_alive for i in range(self.num_players)]
         player_pos = {i: self.player_pos(i) for i in range(self.num_players)}
         food_pos_arr = self.food_pos()
+        food_spawn_turns_arr = self.food_spawn_turns()
         food_list = [
             [food_pos_arr[i, 0], food_pos_arr[i, 1]]
             for i in range(food_pos_arr.shape[0])
@@ -1164,6 +1246,7 @@ class BattleSnakeGame:
             snake_health=snake_health,
             snake_len=snake_len,
             turn=self.turns_played,
+            food_spawn_turns=list(food_spawn_turns_arr),
         )
         return state
 
@@ -1220,6 +1303,11 @@ class BattleSnakeGame:
         num_init_food = len(state.food_pos)
         np_arr = np.asarray(state.food_pos, dtype=ct.c_int)
         food_pos_p = np_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        if state.food_spawn_turns is not None:
+            fst_arr = np.asarray(state.food_spawn_turns, dtype=ct.c_int)
+        else:
+            fst_arr = np.full(num_init_food, state.turn, dtype=ct.c_int)
+        food_spawn_turns_p = fst_arr.ctypes.data_as(ct.POINTER(ct.c_int))
         # hazards, we need to transpose because cpp uses flattened array (this is more efficient)
         hazard_arr = np.zeros(shape=(self.cfg.h, self.cfg.w), dtype=bool)
         if self.cfg.init_hazards is not None:
@@ -1239,6 +1327,7 @@ class BattleSnakeGame:
             snake_pos_p,
             num_init_food,
             food_pos_p,
+            food_spawn_turns_p,
             snake_alive_p,
             snake_health_p,
             snake_len_p,

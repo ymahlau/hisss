@@ -67,6 +67,7 @@ int snake_body_length(GameState* state, int player);
 void snake_pos(GameState* state, int player, int* arr);
 int num_food(GameState* state);
 void food_pos(GameState* state, int* arr);
+void food_spawn_turns_fn(GameState* state, int* arr);
 int turns_played(GameState* state);
 void snake_health(GameState* state, int* arr);
 void area_control(

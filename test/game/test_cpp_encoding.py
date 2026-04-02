@@ -8,6 +8,7 @@ import numpy as np
 from hisss.game.config import BattleSnakeConfig
 from hisss.game.encoding import (
     BestBattleSnakeEncodingConfig,
+    BestRestrictedEncodingConfig,
     SimpleBattleSnakeEncodingConfig,
     layers_per_player,
     num_layers_general,
@@ -483,3 +484,46 @@ class TestEncodingCPP(unittest.TestCase):
                         or obs[player, x, y, food_layer_idx] > 0.065
                     )
                     self.assertTrue(check)
+
+
+class TestRestrictedViewFoodSpawn(unittest.TestCase):
+    """Food spawned this turn is visible even if outside the view radius."""
+
+    def _make_game(self):
+        # 11x11 board, player 0 head at [5,5], food at [0,0] (distance=10 > radius=3)
+        ec = BestRestrictedEncodingConfig()
+        gc = BattleSnakeConfig(
+            w=11,
+            h=11,
+            num_players=2,
+            min_food=0,
+            food_spawn_chance=0,
+            init_snake_pos={0: [[5, 5], [5, 4], [5, 3]], 1: [[9, 9], [9, 8], [9, 7]]},
+            init_food_pos=[[0, 0]],
+            init_snake_len=[3, 3],
+            all_actions_legal=True,
+            ec=ec,
+            view_radius=3,
+        )
+        return BattleSnakeGame(gc)
+
+    def test_new_food_visible_on_spawn_turn(self):
+        # Food at [0,0] spawned at turn 0; turns_played=0 → should be visible
+        game = self._make_game()
+        obs, _, _ = game.get_obs()
+        food_idx = game.layer_explanation["current_food"]
+        food_layer = obs[0, :, :, food_idx]
+        self.assertGreater(food_layer.sum(), 0, "Newly spawned food should be visible")
+        game.close()
+
+    def test_old_food_hidden_outside_radius(self):
+        # After one step food_spawn_turn(0) != turns_played(1) → food hidden again
+        game = self._make_game()
+        game.step((UP, UP))
+        obs, _, _ = game.get_obs()
+        food_idx = game.layer_explanation["current_food"]
+        food_layer = obs[0, :, :, food_idx]
+        self.assertEqual(
+            0, food_layer.sum(), "Food outside radius should be hidden after spawn turn"
+        )
+        game.close()

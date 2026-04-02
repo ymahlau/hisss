@@ -32,9 +32,9 @@ struct Snake{
 
 struct GameState{
     GameState(int w, int h, int num_snakes, int min_food, int food_spawn_chance, int init_turns_played,
-              deque<deque<Coord>> snake_bodies, list<Coord> food_spawns, bool* snake_alive,
-              int* snake_health, int* snake_len, int* max_health, bool wrapped, bool royale, int shrink_n_turns,
-              int hazard_damage, vector<bool> init_hazards);
+              deque<deque<Coord>> snake_bodies, list<Coord> food_spawns, list<int> food_spawn_turn_values,
+              bool* snake_alive, int* snake_health, int* snake_len, int* max_health,
+              bool wrapped, bool royale, int shrink_n_turns, int hazard_damage, vector<bool> init_hazards);
     GameState(const GameState& other);
     ~GameState();
     GameState& operator=(const GameState& other);
@@ -45,6 +45,7 @@ struct GameState{
     int min_food;
     int food_spawn_chance;
     list<Coord> food;
+    list<int> food_spawn_turns;
     deque<Snake*> snakes;
     bool wrapped;
     bool royale;
@@ -55,7 +56,8 @@ struct GameState{
 
 GameState* init(int w, int h, int num_snakes, int min_food, int food_spawn_chance, int init_turns_played,
                 bool spawn_snakes_randomly, int* snake_body_lengths, int max_body_length, int* snake_bodies,
-                int num_init_food, int* food_spawns, bool* snake_alive, int* snake_health, int* snake_len,
+                int num_init_food, int* food_spawns, int* food_spawn_turn_values,
+                bool* snake_alive, int* snake_health, int* snake_len,
                 int* max_health, bool wrapped, bool royale, int shrink_n_turns, int hazard_damage, bool* init_hazards);
 GameState* clone(GameState* state);
 void step(GameState* state, int* actions);

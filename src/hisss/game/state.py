@@ -9,3 +9,4 @@ class BattleSnakeState:
     food_pos: list[list[int]]
     snake_health: list[int]  # includes dead snakes
     snake_len: list[int]  # includes dead snakes
+    food_spawn_turns: list[int] | None = None

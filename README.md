@@ -86,10 +86,6 @@ obs, perm, inv_perm = env.get_obs(symmetry=1)  # specify the symmetry you want f
 ```
 You can get the transformed observation by specifying the symmetry as shown in the example above. You will always get the action permutation and inverse permutation as an additional output of the step function, since with a symmetry applied the policy needs to be carefully permutated as well to keep everything correct.
 
-# Limitations
-There are some limitation to the current implementation:
-- When using the numpy observations in the restricted mode, food is only visible in the observation within the view radius. Usually it should be visible outside the view radius in the spawn turn, but this does not happen currently, because our current implementation does not save the food spawn turn. Since usually food spawning should be turned off during planning anyways, this should almost never be an issue.
-
 # References
 
 This snake simulator was mainly used in the development of [Albatross](https://github.com/ymahlau/albatross). It has already been published there, but this standalone simulator is easier to install and easier to manage. It is targeted for anyone who wants to work with Battlesnake, but not necessarily use the Albatross method. You can cite this repository the same as the albatross repository with:
