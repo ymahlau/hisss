@@ -96,10 +96,11 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
 
     food_arr = game.food_pos()  # shape (n, 2), rows are [x, y]
     if view_radius is not None:
+        spawn_turns = game.food_spawn_turns()
         food_list = [
             {"x": int(row[0]), "y": int(row[1])}
-            for row in food_arr
-            if _visible(int(row[0]), int(row[1]))
+            for i, row in enumerate(food_arr)
+            if _visible(int(row[0]), int(row[1])) or spawn_turns[i] == game.turns_played
         ]
     else:
         food_list = [{"x": int(row[0]), "y": int(row[1])} for row in food_arr]

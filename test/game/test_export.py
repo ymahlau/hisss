@@ -198,7 +198,9 @@ class TestRestrictedExport(unittest.TestCase):
 
     def test_food_outside_radius_hidden(self):
         # food at [0,0], player head at [5,5], radius=3 → distance=10 > 3
+        # step first so food is no longer on its spawn turn
         game = _restricted_game(view_radius=3, food_pos=[[0, 0]])
+        game.step((UP, UP))
         data = json.loads(to_battlesnake_json(game, 0))
         self.assertEqual([], data["board"]["food"])
         game.close()
@@ -218,10 +220,36 @@ class TestRestrictedExport(unittest.TestCase):
         game.close()
 
     def test_food_just_outside_radius_hidden(self):
-        # food at [5,9], distance=4 > radius=3
-        game = _restricted_game(view_radius=3, food_pos=[[5, 9]])
+        # food at [5,9], distance=4 > radius=3; after stepping UP player is at [5,6],
+        # distance becomes 3 which equals radius — use [5,10] (distance=5) to stay hidden
+        game = _restricted_game(view_radius=3, food_pos=[[5, 10]])
+        game.step((UP, UP))
         data = json.loads(to_battlesnake_json(game, 0))
         self.assertEqual([], data["board"]["food"])
+        game.close()
+
+    def test_spawn_turn_food_outside_radius_visible(self):
+        # food at [0,0], player head at [5,5], radius=3 → distance=10 > 3
+        # at turn 0, food spawn turn == turns_played == 0, so food is visible
+        game = _restricted_game(view_radius=3, food_pos=[[0, 0]])
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertIn({"x": 0, "y": 0}, data["board"]["food"])
+        game.close()
+
+    def test_spawn_turn_food_outside_radius_not_visible_next_turn(self):
+        # same setup; after stepping to turn 1, food spawn turn (0) != turns_played (1)
+        # food is outside radius and no longer on spawn turn → hidden
+        game = _restricted_game(view_radius=3, food_pos=[[0, 0]])
+        game.step((UP, UP))
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertNotIn({"x": 0, "y": 0}, data["board"]["food"])
+        game.close()
+
+    def test_spawn_turn_food_within_radius_still_visible(self):
+        # food at [5,6], distance=1 ≤ 3; visible both by radius and spawn turn
+        game = _restricted_game(view_radius=3, food_pos=[[5, 6]])
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertIn({"x": 5, "y": 6}, data["board"]["food"])
         game.close()
 
     # Own snake
