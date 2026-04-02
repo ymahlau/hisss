@@ -77,6 +77,7 @@ GameState::GameState(
         int init_turns_played,
         deque<deque<Coord>> snake_bodies,
         list<Coord> food_spawns,
+        list<int> food_spawn_turn_values,
         bool* snake_alive,
         int* snake_health,
         int* snake_len,
@@ -94,6 +95,7 @@ GameState::GameState(
         min_food(min_food),
         food_spawn_chance(food_spawn_chance),
         food(std::move(food_spawns)),
+        food_spawn_turns(std::move(food_spawn_turn_values)),
         wrapped(wrapped),
         royale(royale),
         shrink_n_turns(shrink_n_turns),
@@ -109,6 +111,7 @@ GameState::GameState(
 
 GameState::GameState(const GameState& other):
     food(other.food),
+    food_spawn_turns(other.food_spawn_turns),
     hazards(other.hazards)
 {
     turn = other.turn;
@@ -129,6 +132,7 @@ GameState::GameState(const GameState& other):
 
 GameState::~GameState(){
     food.clear();
+    food_spawn_turns.clear();
     while(not snakes.empty()){
         Snake* s = snakes.front();
         delete s;
@@ -147,6 +151,8 @@ GameState& GameState::operator=(const GameState& other){
     food_spawn_chance = other.food_spawn_chance;
     food.clear();
     food = other.food;
+    food_spawn_turns.clear();
+    food_spawn_turns = other.food_spawn_turns;
     deque<Snake*> temp_q;
     for (Snake* s : other.snakes){
         auto* temp_s = new Snake(*s);
@@ -179,6 +185,7 @@ GameState* init(
         int* snake_bodies,
         int num_init_food,  // if this is -1, then spawn randomly
         int* food_spawns,
+        int* food_spawn_turn_values,
         bool* snake_alive,
         int* snake_health,
         int* snake_len,
@@ -203,6 +210,7 @@ GameState* init(
     }
     //food
     list<Coord> food_list;
+    list<int> food_spawn_turns_list;
     if (num_init_food == -2){
         food_list.resize(0);
     } else if (num_init_food == -1){
@@ -211,8 +219,17 @@ GameState* init(
             snake_heads.push_back(snake_qs[i].front());
         }
         food_list = initialize_food(w, num_snakes, snake_heads);
+        for (size_t i = 0; i < food_list.size(); i++)
+            food_spawn_turns_list.push_back(init_turns_played);
     } else {
         food_list = food_on_pos(food_spawns, num_init_food);
+        if (food_spawn_turn_values != nullptr) {
+            for (int i = 0; i < num_init_food; i++)
+                food_spawn_turns_list.push_back(food_spawn_turn_values[i]);
+        } else {
+            for (int i = 0; i < num_init_food; i++)
+                food_spawn_turns_list.push_back(init_turns_played);
+        }
     }
     //hazards
     vector<bool> init_hazard_vec(w*h, false);
@@ -221,7 +238,8 @@ GameState* init(
     }
 
     auto* state_p = new GameState(w, h, num_snakes, min_food, food_spawn_chance, init_turns_played,
-                                  snake_qs, food_list, snake_alive, snake_health, snake_len, max_health, wrapped,
+                                  snake_qs, food_list, food_spawn_turns_list,
+                                  snake_alive, snake_health, snake_len, max_health, wrapped,
                                   royale, shrink_n_turns, hazard_damage, init_hazard_vec);
     return state_p;
 }
@@ -354,9 +372,19 @@ void step(GameState* state, int* actions){
      */
     //move snakes and apply damage
     list<Coord> food_to_delete = move_snakes(state, actions);
-    // remove food from board
+    // remove food from board (keep food_spawn_turns in sync)
     for (Coord f: food_to_delete){
-        state->food.remove(f);
+        auto fit = state->food.begin();
+        auto tit = state->food_spawn_turns.begin();
+        while (fit != state->food.end()) {
+            if (*fit == f) {
+                state->food.erase(fit);
+                state->food_spawn_turns.erase(tit);
+                break;
+            }
+            ++fit;
+            ++tit;
+        }
     }
     //place new food
     place_food_randomly(state);

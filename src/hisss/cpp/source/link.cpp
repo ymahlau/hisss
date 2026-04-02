@@ -30,6 +30,7 @@ extern "C" {
         int* snake_bodies,
         int num_init_food,
         int* food_spawns,
+        int* food_spawn_turn_values,
         bool* snake_alive,
         int* snake_health,
         int* snake_len,
@@ -53,6 +54,7 @@ extern "C" {
             snake_bodies,
             num_init_food,
             food_spawns,
+            food_spawn_turn_values,
             snake_alive,
             snake_health,
             snake_len,
@@ -158,6 +160,9 @@ extern "C" {
     }
     HISSS_EXPORT void food_pos_cpp(GameState* state, int* arr){
         food_pos(state, arr);
+    }
+    HISSS_EXPORT void food_spawn_turns_cpp(GameState* state, int* arr){
+        food_spawn_turns_fn(state, arr);
     }
     HISSS_EXPORT int turns_played_cpp(GameState* state){
         return turns_played(state);

@@ -51,6 +51,7 @@ class CPPLibrary:
             ct.POINTER(ct.c_int),
             ct.c_int,
             ct.POINTER(ct.c_int),
+            ct.POINTER(ct.c_int),
             ct.POINTER(ct.c_bool),
             ct.POINTER(ct.c_int),
             ct.POINTER(ct.c_int),
@@ -135,6 +136,10 @@ class CPPLibrary:
         self.lib.num_food_cpp.argtypes = [ct.POINTER(Struct)]
         self.lib.num_food_cpp.restype = ct.c_int
         self.lib.food_pos_cpp.argtypes = [
+            ct.POINTER(Struct),
+            ct.POINTER(ct.c_int),
+        ]
+        self.lib.food_spawn_turns_cpp.argtypes = [
             ct.POINTER(Struct),
             ct.POINTER(ct.c_int),
         ]

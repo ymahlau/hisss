@@ -263,6 +263,7 @@ void place_food_randomly(GameState* state) {
                     int x = j % state->w;
                     int y = j / state->w;
                     state->food.emplace_back(x, y);
+                    state->food_spawn_turns.push_back(state->turn + 1);
                     food_spawns[j] = 0;
                     num_food_spawns--;
                     break;
@@ -834,6 +835,12 @@ void food_pos(GameState* state, int* arr){
         arr[i+1] = c.second;
         i += 2;
     }
+}
+
+void food_spawn_turns_fn(GameState* state, int* arr){
+    int i = 0;
+    for (auto t : state->food_spawn_turns)
+        arr[i++] = t;
 }
 
 int turns_played(GameState* state){

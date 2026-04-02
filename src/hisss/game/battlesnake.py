@@ -204,6 +204,8 @@ class BattleSnakeGame:
             num_init_food = len(self.cfg.init_food_pos)
             np_arr = np.asarray(self.cfg.init_food_pos, dtype=ct.c_int)
             food_pos_p = np_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        # food spawn turns: NULL lets C++ fill in init_turns_played as fallback
+        food_spawn_turns_p = ct.cast(0, ct.POINTER(ct.c_int))
         # hazards, we need to transpose because cpp uses flattened array (this is more efficient)
         hazard_arr = np.zeros(shape=(self.cfg.h, self.cfg.w), dtype=bool)
         if self.cfg.init_hazards is not None:
@@ -224,6 +226,7 @@ class BattleSnakeGame:
             snake_pos_p,
             num_init_food,
             food_pos_p,
+            food_spawn_turns_p,
             snake_alive_p,
             snake_health_p,
             snake_len_p,
@@ -728,6 +731,25 @@ class BattleSnakeGame:
         )
         return res_arr
 
+    def food_spawn_turns(self) -> np.ndarray:
+        """Return the turn each food item spawned, in the same order as food_pos().
+
+        Returns:
+            Integer array of shape ``(num_food,)`` where each element is the
+            turn the corresponding food item first appeared on the board.
+
+        Raises:
+            ValueError: If the game is closed.
+        """
+        if self.is_closed:
+            raise ValueError("Cannot call function on closed game")
+        n = self.num_food()
+        res_arr = np.zeros(shape=(n,), dtype=ct.c_int)
+        CPP_LIB.lib.food_spawn_turns_cpp(
+            self.state_p, res_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        )
+        return res_arr
+
     def is_terminal(self) -> bool:
         """Return whether the game has ended.
 
@@ -1151,6 +1173,7 @@ class BattleSnakeGame:
         snakes_alive_bool = [i in snakes_alive for i in range(self.num_players)]
         player_pos = {i: self.player_pos(i) for i in range(self.num_players)}
         food_pos_arr = self.food_pos()
+        food_spawn_turns_arr = self.food_spawn_turns()
         food_list = [
             [food_pos_arr[i, 0], food_pos_arr[i, 1]]
             for i in range(food_pos_arr.shape[0])
@@ -1164,6 +1187,7 @@ class BattleSnakeGame:
             snake_health=snake_health,
             snake_len=snake_len,
             turn=self.turns_played,
+            food_spawn_turns=list(food_spawn_turns_arr),
         )
         return state
 
@@ -1220,6 +1244,11 @@ class BattleSnakeGame:
         num_init_food = len(state.food_pos)
         np_arr = np.asarray(state.food_pos, dtype=ct.c_int)
         food_pos_p = np_arr.ctypes.data_as(ct.POINTER(ct.c_int))
+        if state.food_spawn_turns is not None:
+            fst_arr = np.asarray(state.food_spawn_turns, dtype=ct.c_int)
+        else:
+            fst_arr = np.full(num_init_food, state.turn, dtype=ct.c_int)
+        food_spawn_turns_p = fst_arr.ctypes.data_as(ct.POINTER(ct.c_int))
         # hazards, we need to transpose because cpp uses flattened array (this is more efficient)
         hazard_arr = np.zeros(shape=(self.cfg.h, self.cfg.w), dtype=bool)
         if self.cfg.init_hazards is not None:
@@ -1239,6 +1268,7 @@ class BattleSnakeGame:
             snake_pos_p,
             num_init_food,
             food_pos_p,
+            food_spawn_turns_p,
             snake_alive_p,
             snake_health_p,
             snake_len_p,
