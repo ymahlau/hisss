@@ -53,6 +53,30 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
         raise ValueError(f"Player {player} is not alive")
 
     cfg = game.cfg
+    view_radius = cfg.view_radius
+
+    if view_radius is not None:
+        ph = game.player_pos(player)
+        player_hx, player_hy = int(ph[0][0]), int(ph[0][1])
+
+        def _visible(x: int, y: int) -> bool:
+            return abs(x - player_hx) + abs(y - player_hy) <= view_radius
+
+        def _build_restricted_body(body_coords):
+            HIDDEN = {"x": -1, "y": -1}
+            result = []
+            in_hidden_run = False
+            for x, y in body_coords:
+                if _visible(int(x), int(y)):
+                    in_hidden_run = False
+                    result.append({"x": int(x), "y": int(y)})
+                else:
+                    if not in_hidden_run:
+                        result.append(HIDDEN)
+                        in_hidden_run = True
+            if not any(seg != HIDDEN for seg in result):
+                return []
+            return result
 
     game_section = {
         "id": str(uuid.uuid4()),
@@ -71,7 +95,14 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
     }
 
     food_arr = game.food_pos()  # shape (n, 2), rows are [x, y]
-    food_list = [{"x": int(row[0]), "y": int(row[1])} for row in food_arr]
+    if view_radius is not None:
+        food_list = [
+            {"x": int(row[0]), "y": int(row[1])}
+            for row in food_arr
+            if _visible(int(row[0]), int(row[1]))
+        ]
+    else:
+        food_list = [{"x": int(row[0]), "y": int(row[1])} for row in food_arr]
 
     hazard_arr = game.get_hazards()
     hazard_coords = np.argwhere(hazard_arr)
@@ -80,18 +111,27 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
     healths = game.player_healths()
     lengths = game.player_lengths()
 
-    def _make_snake(p: int) -> dict:
+    def _make_snake(p: int) -> dict | None:
         body_coords = game.player_pos(p)
-        body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
+        if view_radius is None or p == player:
+            body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
+            health = int(healths[p])
+            length = int(lengths[p])
+        else:
+            body_list = _build_restricted_body(body_coords)
+            if not body_list:
+                return None
+            health = 0
+            length = len(body_list)
         head = body_list[0] if body_list else {"x": 0, "y": 0}
         return {
             "id": f"snake-{p}",
             "name": f"Snake {p}",
-            "health": int(healths[p]),
+            "health": health,
             "body": body_list,
             "latency": "0",
             "head": head,
-            "length": int(lengths[p]),
+            "length": length,
             "shout": "",
             "customizations": {
                 "color": _SNAKE_COLORS[p % len(_SNAKE_COLORS)],
@@ -101,7 +141,11 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
         }
 
     snakes_list = [
-        _make_snake(p) for p in range(game.num_players) if game.is_player_alive(p)
+        s
+        for p in range(game.num_players)
+        if game.is_player_alive(p)
+        for s in [_make_snake(p)]
+        if s is not None
     ]
 
     board_section = {
