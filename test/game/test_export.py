@@ -141,7 +141,7 @@ class TestToBattlesnakeJson(unittest.TestCase):
         self.assertEqual([], data["board"]["hazards"])
         game.close()
 
-    def test_dead_player_raises(self):
+    def test_dead_player_raises_only_for_closed_game(self):
         gc = BattleSnakeConfig(
             w=11,
             h=11,
@@ -156,9 +156,11 @@ class TestToBattlesnakeJson(unittest.TestCase):
         )
         game = BattleSnakeGame(gc)
         game.step((UP, UP))
+        # Dead player should no longer raise; closed game still raises
+        to_battlesnake_json(game, 0)  # should not raise
+        game.close()
         with self.assertRaises(ValueError):
             to_battlesnake_json(game, 0)
-        game.close()
 
     def test_game_id_is_string(self):
         game = _duel_game()
@@ -172,6 +174,87 @@ class TestToBattlesnakeJson(unittest.TestCase):
         data = json.loads(to_battlesnake_json(game, 0))
         snake = next(s for s in data["board"]["snakes"] if s["id"] == "snake-0")
         self.assertEqual(snake["head"], snake["body"][0])
+        game.close()
+
+
+def _dead_player_game():
+    """Player 0 dies on turn 1 by starvation; player 1 survives."""
+    gc = BattleSnakeConfig(
+        w=11,
+        h=11,
+        num_players=2,
+        min_food=0,
+        food_spawn_chance=0,
+        init_snake_pos={0: [[0, 0]], 1: [[5, 5]]},
+        init_food_pos=[],
+        init_snake_len=[3, 3],
+        init_snake_health=[1, 100],
+        all_actions_legal=True,
+    )
+    game = BattleSnakeGame(gc)
+    game.step((UP, UP))  # player 0 starves (health 1 → 0), player 1 moves to [5,6]
+    return game
+
+
+class TestDeadPlayerExport(unittest.TestCase):
+    def test_dead_player_no_error(self):
+        game = _dead_player_game()
+        to_battlesnake_json(game, 0)  # must not raise
+        game.close()
+
+    def test_dead_player_you_id(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertEqual("snake-0", data["you"]["id"])
+        game.close()
+
+    def test_dead_player_you_health_zero(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertEqual(0, data["you"]["health"])
+        game.close()
+
+    def test_dead_player_you_body_nonempty(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertGreater(len(data["you"]["body"]), 0)
+        game.close()
+
+    def test_dead_player_turn_is_current(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertEqual(1, data["turn"])
+        game.close()
+
+    def test_dead_player_not_in_board_snakes_by_default(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        ids = [s["id"] for s in data["board"]["snakes"]]
+        self.assertNotIn("snake-0", ids)
+        game.close()
+
+    def test_dead_player_in_board_snakes_with_flag(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0, include_eliminated=True))
+        ids = [s["id"] for s in data["board"]["snakes"]]
+        self.assertIn("snake-0", ids)
+        game.close()
+
+    def test_dead_player_you_has_elimination_event(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        self.assertIn("elimination", data["you"])
+        ev = data["you"]["elimination"]
+        self.assertIn("cause", ev)
+        self.assertIn("turn", ev)
+        self.assertIn("by", ev)
+        game.close()
+
+    def test_dead_player_board_still_has_alive_snakes(self):
+        game = _dead_player_game()
+        data = json.loads(to_battlesnake_json(game, 0))
+        ids = [s["id"] for s in data["board"]["snakes"]]
+        self.assertIn("snake-1", ids)
         game.close()
 
 
