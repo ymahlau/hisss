@@ -42,7 +42,7 @@ class TestToBattlesnakeJson(unittest.TestCase):
     def test_food_present(self):
         game = _duel_game()
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 5, "y": 5}, data["board"]["food"])
+        self.assertIn({"x": 5, "y": 5, "spawn_turn": 0}, data["board"]["food"])
         game.close()
 
     def test_turn_counter(self):
@@ -209,14 +209,14 @@ class TestRestrictedExport(unittest.TestCase):
         # food at [5,6], distance=1 ≤ 3
         game = _restricted_game(view_radius=3, food_pos=[[5, 6]])
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 5, "y": 6}, data["board"]["food"])
+        self.assertIn({"x": 5, "y": 6, "spawn_turn": 0}, data["board"]["food"])
         game.close()
 
     def test_food_exactly_at_radius_visible(self):
         # food at [5,8], distance=3 = radius=3
         game = _restricted_game(view_radius=3, food_pos=[[5, 8]])
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 5, "y": 8}, data["board"]["food"])
+        self.assertIn({"x": 5, "y": 8, "spawn_turn": 0}, data["board"]["food"])
         game.close()
 
     def test_food_just_outside_radius_hidden(self):
@@ -233,7 +233,7 @@ class TestRestrictedExport(unittest.TestCase):
         # at turn 0, food spawn turn == turns_played == 0, so food is visible
         game = _restricted_game(view_radius=3, food_pos=[[0, 0]])
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 0, "y": 0}, data["board"]["food"])
+        self.assertIn({"x": 0, "y": 0, "spawn_turn": 0}, data["board"]["food"])
         game.close()
 
     def test_spawn_turn_food_outside_radius_not_visible_next_turn(self):
@@ -249,7 +249,7 @@ class TestRestrictedExport(unittest.TestCase):
         # food at [5,6], distance=1 ≤ 3; visible both by radius and spawn turn
         game = _restricted_game(view_radius=3, food_pos=[[5, 6]])
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 5, "y": 6}, data["board"]["food"])
+        self.assertIn({"x": 5, "y": 6, "spawn_turn": 0}, data["board"]["food"])
         game.close()
 
     # Own snake
@@ -409,5 +409,5 @@ class TestRestrictedExport(unittest.TestCase):
         )
         game = BattleSnakeGame(gc)
         data = json.loads(to_battlesnake_json(game, 0))
-        self.assertIn({"x": 0, "y": 0}, data["board"]["food"])
+        self.assertIn({"x": 0, "y": 0, "spawn_turn": 0}, data["board"]["food"])
         game.close()

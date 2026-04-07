@@ -7,14 +7,14 @@ from hisss.game.battlesnake import BattleSnakeGame
 
 
 _SNAKE_COLORS = [
-    "#FF0000",
-    "#00FF00",
-    "#0000FF",
-    "#FFFF00",
-    "#FF00FF",
-    "#00FFFF",
-    "#FF8000",
-    "#8000FF",
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+    (0, 255, 255),
+    (255, 128, 0),
+    (128, 0, 255),
 ]
 
 
@@ -87,6 +87,14 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
                 "foodSpawnChance": cfg.food_spawn_chance,
                 "minimumFood": cfg.min_food,
                 "hazardDamagePerTurn": cfg.hazard_damage,
+                "viewRadius": view_radius,
+                "royale": {"shrinkEveryNTurns": cfg.shrink_n_turns},
+                "squad": {
+                    "allowBodyCollisions": False,
+                    "sharedElimination": False,
+                    "sharedHealth": False,
+                    "sharedLength": False,
+                },
             },
         },
         "map": _map_name(cfg),
@@ -98,12 +106,16 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
     if view_radius is not None:
         spawn_turns = game.food_spawn_turns()
         food_list = [
-            {"x": int(row[0]), "y": int(row[1])}
+            {"x": int(row[0]), "y": int(row[1]), "spawn_turn": int(spawn_turns[i])}
             for i, row in enumerate(food_arr)
             if _visible(int(row[0]), int(row[1])) or spawn_turns[i] == game.turns_played
         ]
     else:
-        food_list = [{"x": int(row[0]), "y": int(row[1])} for row in food_arr]
+        spawn_turns = game.food_spawn_turns()
+        food_list = [
+            {"x": int(row[0]), "y": int(row[1]), "spawn_turn": int(spawn_turns[i])}
+            for i, row in enumerate(food_arr)
+        ]
 
     hazard_arr = game.get_hazards()
     hazard_coords = np.argwhere(hazard_arr)
@@ -134,8 +146,9 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
             "head": head,
             "length": length,
             "shout": "",
+            "squad": None,
             "customizations": {
-                "color": _SNAKE_COLORS[p % len(_SNAKE_COLORS)],
+                "color": list(_SNAKE_COLORS[p % len(_SNAKE_COLORS)]),
                 "head": "default",
                 "tail": "default",
             },
