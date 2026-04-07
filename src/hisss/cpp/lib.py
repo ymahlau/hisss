@@ -165,6 +165,20 @@ class CPPLibrary:
             ct.POINTER(Struct),
             ct.POINTER(ct.c_bool),
         ]
+        self.lib.snake_elim_cause_cpp.argtypes = [ct.POINTER(Struct), ct.c_int]
+        self.lib.snake_elim_cause_cpp.restype = ct.c_int
+        self.lib.snake_elim_killer_cpp.argtypes = [ct.POINTER(Struct), ct.c_int]
+        self.lib.snake_elim_killer_cpp.restype = ct.c_int
+        self.lib.snake_elim_turn_cpp.argtypes = [ct.POINTER(Struct), ct.c_int]
+        self.lib.snake_elim_turn_cpp.restype = ct.c_int
+        self.lib.set_elim_info_cpp.argtypes = [
+            ct.POINTER(Struct),
+            ct.c_int,
+            ct.c_int,
+            ct.c_int,
+            ct.c_int,
+        ]
+        self.lib.set_elim_info_cpp.restype = None
 
         self.lib.compute_nash_cpp.argtypes = [
             ct.c_int,

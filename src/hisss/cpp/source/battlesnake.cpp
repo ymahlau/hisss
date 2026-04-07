@@ -31,6 +31,9 @@ Snake::Snake(
         health(health),
         length(length),
         max_health(max_health),
+        death_cause(DEATH_NONE),
+        death_turn(-1),
+        killer_id(-1),
         body(std::move(spawn_pos)),
         board(w*h, false)
 {
@@ -48,6 +51,9 @@ Snake::Snake(const Snake& other):
     health = other.health;
     length = other.length;
     max_health = other.max_health;
+    death_cause = other.death_cause;
+    death_turn = other.death_turn;
+    killer_id = other.killer_id;
 }
 
 Snake::~Snake(){
@@ -61,6 +67,9 @@ Snake& Snake::operator=(const Snake& other){
     health = other.health;
     length = other.length;
     max_health = other.max_health;
+    death_cause = other.death_cause;
+    death_turn = other.death_turn;
+    killer_id = other.killer_id;
     body.clear();
     body = other.body;
     board.clear();
@@ -289,21 +298,31 @@ list<Coord> move_snakes(GameState* state, const int* actions){
     return food_to_delete;
 }
 
-list<int> calculate_deaths(GameState* state){
-    list<int> snakes_to_kill;
+struct DeathRecord {
+    int snake_id;
+    int cause;     // DeathCause value
+    int killer_id; // -1 if no killer
+};
+
+list<DeathRecord> calculate_deaths(GameState* state){
+    list<DeathRecord> deaths;
     //calculate deaths
     for (auto s : state->snakes){
         if (!s->alive) continue;  // What is dead may never die
         Coord head = s->body.front();
         // 1. death by out of bounds
+        if (not in_bounds(state, head)) {
+            deaths.push_back({s->id, DEATH_WALL, -1});
+            continue;
+        }
         // 2. death by starvation
-        if ((not in_bounds(state, head)) or s->health <= 0) {
-            snakes_to_kill.push_back(s->id);
+        if (s->health <= 0) {
+            deaths.push_back({s->id, DEATH_STARVATION, -1});
             continue;
         }
         // 3. self collision
         if (s->board[head.second * state->w + head.first]){
-            snakes_to_kill.push_back(s->id);
+            deaths.push_back({s->id, DEATH_SELF, -1});
             continue;
         }
         // 4. collision with other snake
@@ -312,17 +331,17 @@ list<int> calculate_deaths(GameState* state){
             if(not other->alive) continue;  // What is dead may also never kill
             // plain body collision with other snake
             if(other->board[head.second * state->w + head.first]){
-                snakes_to_kill.push_back(s->id);
+                deaths.push_back({s->id, DEATH_BODY, other->id});
                 break;
             }
             //check if heads meet in the middle and current snake lost to other
             if(head == other->body.front() and s->length <= other->length){
-                snakes_to_kill.push_back(s->id);
+                deaths.push_back({s->id, DEATH_HEAD, other->id});
                 break;
             }
         }
     }
-    return snakes_to_kill;
+    return deaths;
 }
 
 void maybe_update_hazards(GameState* state){
@@ -389,10 +408,14 @@ void step(GameState* state, int* actions){
     //place new food
     place_food_randomly(state);
     //calculate deaths
-    list<int> snakes_to_kill = calculate_deaths(state);
+    list<DeathRecord> deaths = calculate_deaths(state);
     //kill snakes
-    for (int id: snakes_to_kill){
-        state->snakes.at(id)->alive = false;
+    for (const DeathRecord& d : deaths){
+        Snake* s = state->snakes.at(d.snake_id);
+        s->alive = false;
+        s->death_cause = d.cause;
+        s->death_turn = state->turn;
+        s->killer_id = d.killer_id;
     }
     //draw new heads of live snakes
     for (auto &s : state->snakes){

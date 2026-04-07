@@ -34,12 +34,16 @@ def _map_name(cfg) -> str:
     return "standard"
 
 
-def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
+def to_battlesnake_json(
+    game: BattleSnakeGame, player: int, include_eliminated: bool = False
+) -> str:
     """Serialize a BattleSnakeGame state to a Battlesnake API-compatible JSON string.
 
     Args:
         game: The game instance to serialize.
         player: Zero-based index of the player whose perspective to use as ``"you"``.
+        include_eliminated: When ``True``, dead snakes are included in
+            ``board.snakes`` with an ``"elimination"`` key describing how they died.
 
     Returns:
         JSON string matching the Battlesnake API ``/move`` request body format.
@@ -123,8 +127,44 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
 
     healths = game.player_healths()
     lengths = game.player_lengths()
+    _state = game.get_state() if include_eliminated else None
 
     def _make_snake(p: int) -> dict | None:
+        is_alive = game.is_player_alive(p)
+        if not is_alive:
+            if not include_eliminated:
+                return None
+            body_coords = game.player_pos(p)
+            body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
+            head = body_list[0] if body_list else {"x": 0, "y": 0}
+            snake_dict: dict = {
+                "id": f"snake-{p}",
+                "name": f"Snake {p}",
+                "health": 0,
+                "body": body_list,
+                "latency": "0",
+                "head": head,
+                "length": int(lengths[p]),
+                "shout": "",
+                "squad": None,
+                "customizations": {
+                    "color": list(_SNAKE_COLORS[p % len(_SNAKE_COLORS)]),
+                    "head": "default",
+                    "tail": "default",
+                },
+            }
+            if (
+                _state is not None
+                and _state.elimination_events
+                and p in _state.elimination_events
+            ):
+                ev = _state.elimination_events[p]
+                snake_dict["elimination"] = {
+                    "cause": ev.cause,
+                    "turn": ev.turn,
+                    "by": ev.by,
+                }
+            return snake_dict
         body_coords = game.player_pos(p)
         if view_radius is None or p == player:
             body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
@@ -155,11 +195,7 @@ def to_battlesnake_json(game: BattleSnakeGame, player: int) -> str:
         }
 
     snakes_list = [
-        s
-        for p in range(game.num_players)
-        if game.is_player_alive(p)
-        for s in [_make_snake(p)]
-        if s is not None
+        s for p in range(game.num_players) for s in [_make_snake(p)] if s is not None
     ]
 
     board_section = {

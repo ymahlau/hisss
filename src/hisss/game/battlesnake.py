@@ -7,7 +7,12 @@ from typing import Optional, Any
 import numpy as np
 
 from hisss.cpp.lib import CPP_LIB
-from hisss.game.state import BattleSnakeState
+from hisss.game.state import (
+    CAUSE_INT_TO_STR,
+    CAUSE_STR_TO_INT,
+    BattleSnakeState,
+    EliminationEvent,
+)
 from hisss.game.config import (
     BattleSnakeConfig,
     encoding_layer_indices,
@@ -1239,6 +1244,18 @@ class BattleSnakeGame:
         ]
         snake_health = self.player_healths()
         snake_len = self.player_lengths()
+        elimination_events: dict[int, EliminationEvent] = {}
+        for i in range(self.num_players):
+            if not snakes_alive_bool[i]:
+                cause_int = CPP_LIB.lib.snake_elim_cause_cpp(self.state_p, i)
+                killer_int = CPP_LIB.lib.snake_elim_killer_cpp(self.state_p, i)
+                elim_turn = CPP_LIB.lib.snake_elim_turn_cpp(self.state_p, i)
+                cause_str = CAUSE_INT_TO_STR.get(cause_int)
+                if cause_str is not None:
+                    by_str = f"snake-{killer_int}" if killer_int >= 0 else None
+                    elimination_events[i] = EliminationEvent(
+                        cause=cause_str, turn=elim_turn, by=by_str
+                    )
         state = BattleSnakeState(
             snakes_alive=snakes_alive_bool,
             snake_pos=player_pos,
@@ -1247,6 +1264,7 @@ class BattleSnakeGame:
             snake_len=snake_len,
             turn=self.turns_played,
             food_spawn_turns=list(food_spawn_turns_arr),
+            elimination_events=elimination_events if elimination_events else None,
         )
         return state
 
@@ -1338,4 +1356,11 @@ class BattleSnakeGame:
             self.cfg.hazard_damage,
             hazards_p,
         )
+        if state.elimination_events:
+            for snake_id, event in state.elimination_events.items():
+                cause_int = CAUSE_STR_TO_INT.get(event.cause, 0)
+                killer_int = int(event.by.split("-")[1]) if event.by is not None else -1
+                CPP_LIB.lib.set_elim_info_cpp(
+                    self.state_p, snake_id, cause_int, killer_int, event.turn
+                )
         self.reset_saved_properties()
