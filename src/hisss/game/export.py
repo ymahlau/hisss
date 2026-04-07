@@ -49,12 +49,10 @@ def to_battlesnake_json(
         JSON string matching the Battlesnake API ``/move`` request body format.
 
     Raises:
-        ValueError: If the game is closed or if ``player`` is not alive.
+        ValueError: If the game is closed.
     """
     if game.is_closed:
         raise ValueError("Cannot serialize a closed game")
-    if not game.is_player_alive(player):
-        raise ValueError(f"Player {player} is not alive")
 
     cfg = game.cfg
     view_radius = cfg.view_radius
@@ -127,12 +125,16 @@ def to_battlesnake_json(
 
     healths = game.player_healths()
     lengths = game.player_lengths()
-    _state = game.get_state() if include_eliminated else None
+    _state = (
+        game.get_state()
+        if (include_eliminated or not game.is_player_alive(player))
+        else None
+    )
 
-    def _make_snake(p: int) -> dict | None:
+    def _make_snake(p: int, force: bool = False) -> dict | None:
         is_alive = game.is_player_alive(p)
         if not is_alive:
-            if not include_eliminated:
+            if not include_eliminated and not force:
                 return None
             body_coords = game.player_pos(p)
             body_list = [{"x": int(x), "y": int(y)} for x, y in body_coords]
@@ -211,6 +213,6 @@ def to_battlesnake_json(
             "game": game_section,
             "turn": game.turns_played,
             "board": board_section,
-            "you": _make_snake(player),
+            "you": _make_snake(player, force=True),
         }
     )
