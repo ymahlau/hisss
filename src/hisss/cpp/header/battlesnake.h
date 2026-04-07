@@ -16,6 +16,15 @@ using Coord = pair<int, int>;
 
 void set_seed_gym(int seed);
 
+enum DeathCause {
+    DEATH_NONE = 0,
+    DEATH_WALL = 1,
+    DEATH_STARVATION = 2,
+    DEATH_SELF = 3,
+    DEATH_BODY = 4,
+    DEATH_HEAD = 5,
+};
+
 struct Snake{
     Snake(int id, bool alive, int health, int length, int w, int h, int max_health, deque<Coord> spawn_pos);
     Snake(const Snake& other);
@@ -26,6 +35,9 @@ struct Snake{
     int health;
     int length;
     int max_health;
+    int death_cause;   // DeathCause value, 0 if alive
+    int death_turn;    // turn when eliminated, -1 if alive
+    int killer_id;     // id of killing snake, -1 if none
     std::deque<Coord> body;
     std::vector<bool> board; //true if allocated by body
 };

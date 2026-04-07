@@ -229,6 +229,22 @@ extern "C" {
         }
     }
 
+    HISSS_EXPORT int snake_elim_cause_cpp(GameState* state, int snake_id) {
+        return state->snakes.at(snake_id)->death_cause;
+    }
+    HISSS_EXPORT int snake_elim_killer_cpp(GameState* state, int snake_id) {
+        return state->snakes.at(snake_id)->killer_id;
+    }
+    HISSS_EXPORT int snake_elim_turn_cpp(GameState* state, int snake_id) {
+        return state->snakes.at(snake_id)->death_turn;
+    }
+    HISSS_EXPORT void set_elim_info_cpp(GameState* state, int snake_id, int cause, int killer_id, int death_turn) {
+        Snake* s = state->snakes.at(snake_id);
+        s->death_cause = cause;
+        s->killer_id = killer_id;
+        s->death_turn = death_turn;
+    }
+
     HISSS_EXPORT void set_seed(int seed) {
         set_seed_gym(seed);
         set_seed_utils(seed);
