@@ -1116,9 +1116,9 @@ class BattleSnakeGame:
                         cur_layer = result[
                             idx, :, :, self.layer_explanation[f"{p}_snake_body"]
                         ]
-                        result[
-                            idx, :, :, self.layer_explanation[f"{p}_snake_body"]
-                        ] = cur_layer * cur_mask
+                        result[idx, :, :, self.layer_explanation[f"{p}_snake_body"]] = (
+                            cur_layer * cur_mask
+                        )
                     if f"{p}_snake_body_as_one_hot" in self.layer_explanation:
                         cur_layer = result[
                             idx,
@@ -1136,16 +1136,16 @@ class BattleSnakeGame:
                         cur_layer = result[
                             idx, :, :, self.layer_explanation[f"{p}_snake_head"]
                         ]
-                        result[
-                            idx, :, :, self.layer_explanation[f"{p}_snake_head"]
-                        ] = cur_layer * cur_mask
+                        result[idx, :, :, self.layer_explanation[f"{p}_snake_head"]] = (
+                            cur_layer * cur_mask
+                        )
                     if f"{p}_snake_tail" in self.layer_explanation:
                         cur_layer = result[
                             idx, :, :, self.layer_explanation[f"{p}_snake_tail"]
                         ]
-                        result[
-                            idx, :, :, self.layer_explanation[f"{p}_snake_tail"]
-                        ] = cur_layer * cur_mask
+                        result[idx, :, :, self.layer_explanation[f"{p}_snake_tail"]] = (
+                            cur_layer * cur_mask
+                        )
             # make mask layer
             if self.cfg.ec.include_view_mask:
                 mask_arr = np.asarray(masks)
@@ -1364,4 +1364,3 @@ class BattleSnakeGame:
                     self.state_p, snake_id, cause_int, killer_int, event.turn
                 )
         self.reset_saved_properties()
-        
