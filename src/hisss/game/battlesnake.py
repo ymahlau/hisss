@@ -1075,76 +1075,76 @@ class BattleSnakeGame:
                 all_spawn_turns = self.food_spawn_turns()
                 new_food_pos = self.food_pos()[all_spawn_turns == self.turns_played]
             masks = []
-            for p_self in self.players_at_turn():
+            for idx, p_self in enumerate(self.players_at_turn()):
                 scaled_distance = result[
-                    p_self, :, :, self.layer_explanation["distance_map"]
+                    idx, :, :, self.layer_explanation["distance_map"]
                 ]
                 distance_map = scaled_distance * (self.cfg.w + self.cfg.h - 2)
                 cur_mask = (distance_map <= self.cfg.view_radius).astype(float)
                 masks.append(cur_mask)
                 if "current_food" in self.layer_explanation:
                     food_idx = self.layer_explanation["current_food"]
-                    cur_layer = result[p_self, :, :, food_idx]
-                    result[p_self, :, :, food_idx] = cur_layer * cur_mask
+                    cur_layer = result[idx, :, :, food_idx]
+                    result[idx, :, :, food_idx] = cur_layer * cur_mask
                     # Food that spawned this turn is always visible for one step
                     if new_food_pos is not None and len(new_food_pos) > 0:
                         spawn_mask = self._new_food_obs_mask(
                             new_food_pos, p_self, num_rot, flip
                         )
-                        result[p_self, :, :, food_idx] = np.maximum(
-                            result[p_self, :, :, food_idx], spawn_mask
+                        result[idx, :, :, food_idx] = np.maximum(
+                            result[idx, :, :, food_idx], spawn_mask
                         )
                 for p in range(
                     1, self.num_players
                 ):  # do not restrict view on own player
                     if f"{p}_snake_health" in self.layer_explanation:
                         result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_health"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_health"]
                         ] = 0
                     if f"{p}_snake_length" in self.layer_explanation:
                         result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_length"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_length"]
                         ] = 0
                     if f"{p}_snake_tail_distance" in self.layer_explanation:
                         result[
-                            p_self,
+                            idx,
                             :,
                             :,
                             self.layer_explanation[f"{p}_snake_tail_distance"],
                         ] = 0
                     if f"{p}_snake_body" in self.layer_explanation:
                         cur_layer = result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_body"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_body"]
                         ]
                         result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_body"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_body"]
                         ] = cur_layer * cur_mask
                     if f"{p}_snake_body_as_one_hot" in self.layer_explanation:
                         cur_layer = result[
-                            p_self,
+                            idx,
                             :,
                             :,
                             self.layer_explanation[f"{p}_snake_body_as_one_hot"],
                         ]
                         result[
-                            p_self,
+                            idx,
                             :,
                             :,
                             self.layer_explanation[f"{p}_snake_body_as_one_hot"],
                         ] = cur_layer * cur_mask
                     if f"{p}_snake_head" in self.layer_explanation:
                         cur_layer = result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_head"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_head"]
                         ]
                         result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_head"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_head"]
                         ] = cur_layer * cur_mask
                     if f"{p}_snake_tail" in self.layer_explanation:
                         cur_layer = result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_tail"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_tail"]
                         ]
                         result[
-                            p_self, :, :, self.layer_explanation[f"{p}_snake_tail"]
+                            idx, :, :, self.layer_explanation[f"{p}_snake_tail"]
                         ] = cur_layer * cur_mask
             # make mask layer
             if self.cfg.ec.include_view_mask:
@@ -1364,3 +1364,4 @@ class BattleSnakeGame:
                     self.state_p, snake_id, cause_int, killer_int, event.turn
                 )
         self.reset_saved_properties()
+        
